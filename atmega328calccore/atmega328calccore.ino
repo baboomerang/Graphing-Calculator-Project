@@ -515,7 +515,7 @@ BigNumber SecondNumber() {
 // ========================================================================================================================================================================================================================================
 
 // ========================================================================================================================================================================================================================================
-void printBignum (BigNumber n, byte arith_part) {
+void printBignum (BigNumber n, byte arith_part, bool isTotal) {
   main_override = false;
   int p;
   Serial.print("BEFORE LCDPRINTING BIGNUM freeMemory()=");
@@ -538,8 +538,8 @@ void printBignum (BigNumber n, byte arith_part) {
         lcd.print(s[i]);
       }
     }
-
-    if ((n == total && !decimal)) startcounting = true; else if (isPunct(s[i]) && !decimal) break; else if (isPunct(s[i]) && decimal) startcounting = true;
+// changed the beginning because it makes no effect on the system. Just make an exception if you are printing total, or printing first as the total, bypass this check completly with a boolean
+   if(isTotal && isPunct(s[i])) startcounting = true; else if (isPunct(s[i]) && !decimal && !isTotal) break; else if (isPunct(s[i]) && decimal) startcounting = true;
 
     if (startcounting == true) {
       //      Serial.println("=============START COUNTING IS TRUE=========");
