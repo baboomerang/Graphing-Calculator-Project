@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include <MemoryFree.h>
 
 #include "BigNumber.h"
 #include <LCD.h>
@@ -23,7 +23,6 @@
 #define BUTTON_PIN_DECIM 7
 #define BUTTON_PIN_PI 8
 #define BUTTON_PIN_NEG 5
-#define DIGITS 130
 
 Bounce debouncer = Bounce();
 Bounce debouncer2 = Bounce();
@@ -38,6 +37,7 @@ bool oldpivalue = LOW;
 bool oldnegvalue = LOW;
 
 byte pioverride;
+bool main_override = false;
 
 byte decimal = 0;
 bool complete = 0;
@@ -57,18 +57,21 @@ byte incomingByte = 0;
 
 char byteChar = 0;
 
-bc_num divideByBase10;
-bc_num bignumByte = 0;
-bc_num first = 0;
-bc_num second = 0;
-bc_num total = NULL;
+BigNumber divideByBase10 = 1;
+BigNumber bignumByte = 0;
+BigNumber first = 0;
+BigNumber second = 0;
+BigNumber total = NULL;
 //int pi = 0;
-bc_num negate = 0;
+BigNumber negate = -1;
 
 void setup() {
   Serial.begin(9600);
   BigNumber::begin();        //                                                                                                          THIS IS WHERE THE BIGNUMBER LIBRARY BEGINS
   BigNumber::setScale(20);
+  Serial.print("BEFORE BIGNUMBERS AND LCD SETUPfreeMemory()=");
+  Serial.println(freeMemory());
+  //  delay(100);
   lcd.begin (20, 4, LCD_5x8DOTS);
   lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE);
   lcd.home();
@@ -97,9 +100,10 @@ void setup() {
   pinMode(BUTTON_PIN_NEG, INPUT_PULLUP);
   debouncer5.attach(BUTTON_PIN_NEG);
   debouncer5.interval(10); // interval in ms
+  Serial.print("AFTER SETUPfreeMemory()=");
+  Serial.println(freeMemory());
 
-
-  bc_add(divideByBase10, bc_num(1), &divideByBase10, DIGITS);
+  //  delay(100);
 }
 
 void loop() {
@@ -127,12 +131,6 @@ void serialdataPull() {
   }
 }
 
-void print_bignum (bc_num x)
-{
-  char *s = bc_num2str(x);
-  Serial.println (s);
-  free(s);
-}
 void mult_debounce() {
   debouncer.update();
   byte value = debouncer.read();
@@ -200,14 +198,16 @@ void neg_debounce() {
 
 void calcProc() {  //===============================================================================================================================================================================================================================
   if (buttonprocessed == 1) {
+    Serial.print("BUTTONPRESSEDfreeMemory()=");
+    Serial.println(freeMemory());
+    //    delay(100);
     switch (byteChar) {
       //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       case '0' ... '9' : { // This keeps collecting the first value until a operator is pressed "+-*/"
-          bignumByte = bc_num(incomingByte - 48);
-          lcd.setCursor(0, 0);
+          BigNumber(bignumByte) = BigNumber(incomingByte) - BigNumber(48);
+          //          lcd.setCursor(0, 0);
           if (!decimal) {
-            bc_multiply(first, bc_num(10), &first, DIGITS);
-            bc_add(first, bignumByte, &first, DIGITS);
+            first = first * BigNumber(10) + BigNumber(bignumByte);
           } else {
             //----------------------------------------------------------------------------------------------------------
             /* You cannot use the built in power function with C. As it updates power result,
@@ -218,8 +218,8 @@ void calcProc() {  //===========================================================
             */
             //          divideByBase10 = BigNumber(pow(BigNumber(10), loops));
             //----------------------------------------------------------------------------------------------------------
-            bc_multiply(divideByBase10, bc_num(10), &divideByBase10, DIGITS);
-            first = bc_add(first, bc_divide(bignumByte, divideByBase10), &first, DIGITS);
+            divideByBase10 = divideByBase10 * BigNumber(10);
+            first = first + BigNumber(bignumByte) / BigNumber(divideByBase10);
           }
           if (complete == 1) {
             lcd.clear();
@@ -227,8 +227,7 @@ void calcProc() {  //===========================================================
             lcd.blink();
             complete = 0;
           }
-          //!@#$%^&*()_!@#$%^&*()_!~@#$%^&*()!@#$%^&*()  print the number here but make sure it doesnt overflow into the ram
-          //          lcdprintBignum(first);
+          printBignum(first, 1);
           break;
         }
       //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -247,9 +246,8 @@ void calcProc() {  //===========================================================
           lcd.setCursor(0, 0);
           lcd.print(F("                    "));
           lcd.setCursor(0, 0);
-          first = bc_multiply(first, bc_mum(-1));
-          //!@#$%^&*()_!@#$%^&*()_!~@#$%^&*()!@#$%^&*()  print the number here but make sure it doesnt overflow into the ram
-          //          lcdprintBignum(first);
+          first = first * BigNumber(negate);
+          printBignum(first, 1);
         }
         break;
 
@@ -275,7 +273,7 @@ void calcProc() {  //===========================================================
             lcd.clear();
             lcd.home();
             lcd.blink();
-            BigNumber& first = pi;
+            BigNumber &first = pi;
             lcd.print(char(247));
             pioverride = 0;
           }
@@ -295,8 +293,7 @@ void calcProc() {  //===========================================================
           //          lcd.print("+");
           //          second = SecondNumber(); // // switch to secondNumber to detect/input the addend ( augend is combined with the addend )
           //        }
-          bc_add(first, second, total);
-          //          total = first + second;
+          total = first + second;
           reportResult();
         }
         break;
@@ -314,8 +311,7 @@ void calcProc() {  //===========================================================
           //          lcd.print("-");                                                                     //  8         -             3   = 5
           //          second = SecondNumber(); // switch to secondNumber to detect/input the subtrahend ( minuend is reduced by the subtrahend )
           //        }
-          bc_subtract(first, second, &total);
-          //          total = first - second;
+          total = first - second;
           reportResult();
         }
         break;
@@ -333,8 +329,7 @@ void calcProc() {  //===========================================================
           //          lcd.print("*");
           //          second = SecondNumber(); // switch to secondNumber to detect/input the multiplicand ( multiplier is copied n-times by the multiplicand )
           //        }
-          bc_multiply(first, second, &total, DIGITS);
-          //          total = first * second;
+          total = first * second;
           reportResult();
         }
         break;
@@ -342,7 +337,7 @@ void calcProc() {  //===========================================================
         if (startprogmem) {
           looponce = 0;
           decimal = 0;
-          bc_divide(dividebyBase10, divideByBase10, &divideByBase10, DIGITS);
+          divideByBase10 = 1;
           first = (total != 0 ? total : first);
           result_as_input();
           lcd.setCursor(0, 1);
@@ -377,8 +372,7 @@ void calcProc() {  //===========================================================
             lcd.print(F("Invalid:DivideByZero"));
             break;
           } else {
-            bc_divide(first, second, &total)
-            //            total = first / second;
+            total = first / second;
           }
           //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
           reportResult();
@@ -400,7 +394,7 @@ void calcProc() {  //===========================================================
 void operatorProcess(char oper8) {
   looponce = 0;
   decimal = 0;
-  bc_divide(dividebyBase10, divideByBase10, &divideByBase10, DIGITS);
+  divideByBase10 = 1;
   first = (total != 0 ? total : first);
   result_as_input();
   lcd.setCursor(0, 1);
@@ -448,17 +442,15 @@ BigNumber SecondNumber() {
     if (buttonprocessed == 1 ) { // only check through this if else system once ( when the button is pressed once )
       //--------------------------------------------------------------------
       if (byteChar >= '0' && byteChar <= '9') {
-        bignumByte = bc_num(incomingByte - 48);
+        bignumByte = BigNumber(incomingByte) - BigNumber(48);
         if (!decimal) {
-          bc_multiply(second, bc_num(10), &second, DIGITS);
-          bc_add(second, bc_num(bignumByte), &second, DIGITS);
+          second = second * BigNumber(10) + BigNumber(bignumByte);
         } else {
-          bc_multiply(divideByBase10, bc_num(10), &divideByBase10, DIGITS);
-          bc_add(second, bc_divide(bignumByte, divideByBase10,), &second, DIGITS);
+          divideByBase10 = divideByBase10 * BigNumber(10);
+          second = second + BigNumber(bignumByte) / BigNumber(divideByBase10);
         }
-        lcd.setCursor(0, 2);
-
-        //        lcdprintBignum(second);
+        //        lcd.setCursor(0, 2);
+        printBignum(second, 2);
       }
       if (byteChar == 'p') {
         BigNumber(pi) = BigNumber("3.141592653589793238");
@@ -493,8 +485,8 @@ BigNumber SecondNumber() {
         lcd.setCursor(0, 2);
         lcd.print(F("                    "));
         lcd.setCursor(0, 2);
-        bc_multiply(second, negate, &second, DIGITS);
-        //        lcdprintBignum(second);
+        second = second * BigNumber(negate);
+        printBignum(second, 2);
       }
       //--------------------------------------------------------------------
       if (byteChar == '.') {
@@ -514,8 +506,108 @@ BigNumber SecondNumber() {
   }
   return second;
 } //end of secondnumber
+// ========================================================================================================================================================================================================================================
 
+// ========================================================================================================================================================================================================================================
+
+// ========================================================================================================================================================================================================================================
+//i have lost track of what the code for printing bignum does. It's so fucking confusing. Any single change on any line below WILL REQUIRE extensive testing through trial and error to fix.
+// ========================================================================================================================================================================================================================================
+
+// ========================================================================================================================================================================================================================================
+void printBignum (BigNumber n, byte arith_part) {
+  main_override = false;
+  int p;
+  Serial.print("BEFORE LCDPRINTING BIGNUM freeMemory()=");
+  Serial.println(freeMemory());
+
+  bool startcounting = false;
+  char * s = n.toString ();
+  //  Serial.println (s);
+  for (int i = 0; i < (strlen(s)); i++) {
+    char *z = s[i];
+    if (i < (strlen(s) - 21)) {
+      if (arith_part == 1) {
+        lcd.setCursor(i, 0);
+        lcd.print(s[i]);
+      } else if (arith_part == 2) {
+        lcd.setCursor(i, 2);
+        lcd.print(s[i]);
+      } else if (arith_part == 3) {
+        lcd.setCursor(i, 3);
+        lcd.print(s[i]);
+      }
+    }
+
+    if ((n == total && !decimal)) startcounting = true; else if (isPunct(s[i]) && !decimal) break; else if (isPunct(s[i]) && decimal) startcounting = true;
+
+    if (startcounting == true) {
+      //      Serial.println("=============START COUNTING IS TRUE=========");
+      s[i] != '0' ? checkednotzero() : zero++;
+      main_override ? p = 2 : lcd.print(s[i]);
+      //      Serial.println("notzero : " + String(notzero) + " zero" + String(zero));
+      if (notzero >= 1 && zero >= 1) {
+        //        Serial.println("WE GET THE S I PRINTED TO BLANK HOPEFULLY IN THE CODE");
+        s[i] != '0' ? lcd.print(s[i]) : main_override = true;
+        //        delay(50);
+      } else if (zero > 8 && notzero == 1) {
+        //        Serial.println("zero > 8 && notzero == 0");
+      }
+      //      if (notzero < 1 && zero < 5) {
+      //        lcd.print(s[i]);
+      //      } else if (zero < 8 && notzero != 0) {
+      //        lcd.print(s[i]);
+      //      } else {
+      //        Serial.println("SO NOT ZERO IS : " + String(notzero) + "  AND ZERO IS " + String(zero)) ;
+      //      }
+    }//end of start counting
+
+    //    if (notzero >= 1 && zero == 5) {
+    //      Serial.println("WE BREAK");
+    //      //      s[i] != '0' ? lcd.print(s[i]) : Serial.println("IGNORE DIS");
+    //    } else if (zero >= 8 && notzero == 0) {
+    //      if (arith_part == 1) {
+    //        lcd.setCursor((strlen(s) - 21), 0);
+    //        lcd.print("ZZ");
+    //        Serial.println("WIPE CODE 1");
+    //        break;
+    //      }
+    //      if (arith_part == 2) {
+    //        lcd.setCursor((strlen(s) - 21), 1);
+    //        lcd.print("YY ");
+    //        Serial.println("WIPE CODE 2");
+    //        break;
+    //      }
+    //      if (arith_part == 3) {
+    //        lcd.setCursor((strlen(s) - 21), 3);
+    //        lcd.print("XX ");
+    //        Serial.println("WIPE CODE 3");
+    //        break;
+    //      }
+    //    }
+    //    else {
+    //      Serial.println("WE WTF?");
+    //      lcd.print(s[i]);
+    //    }
+  }
+  free(s);
+  //  Serial.println(" ");
+  //  Serial.print("BEFORE LCDPRINTING BIGNUM freeMemory()=");
+  //  Serial.println(freeMemory());
+}
+
+// ========================================================================================================================================================================================================================================
+
+// ========================================================================================================================================================================================================================================
+
+// ========================================================================================================================================================================================================================================
+
+// ========================================================================================================================================================================================================================================
+//( zero == 4 && notzero == 1 ) ? cutHere = v - 2  : ( zero >= 8 && notzero == 0 ) ? v = thedecim : cutHere = predecimlength;
 //void lcdprintBignum (BigNumber zt) {
+//  Serial.print("BEFORE LCDPRINTING BIGNUM freeMemory()=");
+//  Serial.println(freeMemory());
+//  //  delay(100);
 //  String istring = zt.toString();
 //  byte thedecim = istring.indexOf('.');
 //  //========================================================================================================
@@ -540,7 +632,7 @@ BigNumber SecondNumber() {
 //    byte cutHere;
 //    String predecimal = istring.substring(0, thedecim);
 //    byte predecimlength = predecimal.length();
-//    predecimal.reserve(predecimlength);
+//    //    predecimal.reserve(predecimlength);
 //    //    Serial.println("here is what we have for predecimal   " + predecimal);
 //    for (byte H = thedecim + 1; H < istring.length(); H++) {
 //      byte z = istring.charAt(H) - 48;
@@ -561,20 +653,27 @@ BigNumber SecondNumber() {
 //    //    Serial.println("Im checking the value of cutHere " + String(cutHere));
 //    //    delay(5);
 //    String totalstring = istring.substring(0, cutHere + predecimlength);
-//    totalstring.reserve(cutHere + predecimlength);
+//    //    totalstring.reserve(cutHere + predecimlength);
 //    //    Serial.println(totalstring);
 //    lcd.print(totalstring);
 //    /* work on this thing so we can have vertical scrolling
 //      the display code will be one of the most complex codes youll ever make*/
 //    //    totalstring.length() > 19 ?
+//    Serial.print("AFTER PRINTING BIGNUMfreeMemory()=");
+//    Serial.println(freeMemory());
+//
+//    delay(100);
 //  }//end of zt total
 //  //========================================================================================================
 //}// end of lcdprintbignum
 
 void memoryclear() {
+  Serial.print("MEMORYCLEAR() FUNCTION RIGHT BEFOREfreeMemory()=");
+  Serial.println(freeMemory());
+  delay(100);
+  main_override = false;
   total = NULL;
-  //  divideByBase10 = 1;
-  bc_divide(dividebyBase10, divideByBase10, &divideByBase10, DIGITS);
+  divideByBase10 = 1;
   decimal = 0;
   bignumByte = 0;
   first = 0;
@@ -583,31 +682,40 @@ void memoryclear() {
   lcd.clear();
   lcd.blink();
   second = 0;
+  Serial.print("MEMORYCLEAR() AFTER THATfreeMemory()=");
+  Serial.println(freeMemory());
+  delay(100);
 }
 
 void result_as_input() {
   if ( total != 0 ) {
     wipeDisplay();
     lcd.setCursor(0, 0);
-    //    lcdprintBignum(first);
+    printBignum(first, 1);
   }
 }
 
 void wipeDisplay() {
+  Serial.print("BEFORE CLEARINGfreeMemory()=");
+  Serial.println(freeMemory());
+  delay(100);
   lcd.clear();
   lcd.blink();
+  Serial.print("AFTERCLEARNINGfreeMemory()=");
+  Serial.println(freeMemory());
+  delay(100);
 }
 
 void reportResult() {
   lcd.setCursor(0, 3);
-  //  lcdprintBignum(total);
+  printBignum(total, 3);
   first = 0, second = 0; // reset values back to zero for next use
   complete = 1;
 }
 
 int checkednotzero() {
   //Serial.println("Checked Integer Was Not Zero ");
-  notzero = 1;
+  notzero++;
   zero = 0;
 }
 
