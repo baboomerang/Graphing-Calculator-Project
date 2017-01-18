@@ -76,13 +76,14 @@ void setup() {
   lcd.setBacklight(HIGH);
   lcd.clear();
   lcd.setCursor(0, 0);
-  if (EEPROM.read(0) == 237) {
+  int eepromvalue = EEPROM.read(0);
+  if (eepromvalue == 237) {
     lcd.setCursor(6, 0);
     lcd.print(F("OVERFLOW"));
     lcd.setCursor(0, 1);
     lcd.print(F("Recovered from fatal"));
     lcd.setCursor(0, 2);
-    lcd.print(F("error, be careful"));
+    lcd.print(F("error, be careful "));
     lcd.setCursor(0, 3);
     lcd.print(F("next time! :)"));
   } else {
@@ -109,7 +110,7 @@ void setup() {
   pinMode(BUTTON_PIN_NEG, INPUT_PULLUP);
   debouncer5.attach(BUTTON_PIN_NEG);
   debouncer5.interval(10); // interval in ms
-  EEPROM.write(0, 0);
+  eepromvalue != 0 ? EEPROM.write(0, 0) : doNothing();
 }
 
 void loop() {
@@ -130,6 +131,10 @@ void loop() {
 //=============================================================================================================
 ISR( WDT_vect ) {
   EEPROM.write(0, 237);
+  lcd.clear();
+  lcd.clear();
+  lcd.clear();
+  lcd.print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 }
 //=============================================================================================================
 
