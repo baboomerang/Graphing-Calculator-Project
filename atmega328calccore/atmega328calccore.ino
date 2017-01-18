@@ -35,14 +35,14 @@ Bounce debouncer3 = Bounce();
 Bounce debouncer4 = Bounce();
 Bounce debouncer5 = Bounce();
 
-bool oldmultvalue = LOW;
-bool olddivvalue = LOW;
-bool olddecimvalue = LOW;
-bool oldpivalue = LOW;
-bool oldnegvalue = LOW;
+byte oldmultvalue = LOW;
+byte olddivvalue = LOW;
+byte olddecimvalue = LOW;
+byte oldpivalue = LOW;
+byte oldnegvalue = LOW;
 
 byte pioverride;
-bool main_override = false;
+byte main_override = false;
 
 byte decimal = 0;
 byte complete = 0;
@@ -50,7 +50,6 @@ byte complete = 0;
 byte looponce = 0;
 byte zero = 0;
 byte notzero = 0;
-//boolean useless = false;
 byte startprogmem = 0;
 
 LiquidCrystal_I2C lcd(I2C_ADDR, En_pin, Rw_pin, Rs_pin, D4_pin, D5_pin, D6_pin, D7_pin);
@@ -67,7 +66,7 @@ BigNumber total = NULL;
 BigNumber negate = -1;
 
 void setup() {
-  delay(5000);
+  wdt_enable(WDTO_8S);
   Serial.begin(9600);
   BigNumber::begin();        //                                                                                                          THIS IS WHERE THE BIGNUMBER LIBRARY BEGINS
   BigNumber::setScale(20);
@@ -77,18 +76,17 @@ void setup() {
   lcd.setBacklight(HIGH);
   lcd.clear();
   lcd.setCursor(0, 0);
-  if (EEPROM.read(0) != 0) {
+  if (EEPROM.read(0) == 237) {
     lcd.setCursor(6, 0);
-    lcd.print("OVERFLOW");
+    lcd.print(F("OVERFLOW"));
     lcd.setCursor(0, 1);
-    lcd.print("Recovered from fatal");
+    lcd.print(F("Recovered from fatal"));
     lcd.setCursor(0, 2);
-    lcd.print("error, be careful");
+    lcd.print(F("error, be careful"));
     lcd.setCursor(0, 3);
-    lcd.print("next time! :)");
-    EEPROM.write(0, 0);
+    lcd.print(F("next time! :)"));
   } else {
-    lcd.print(F("CALCULTR PROGRM v5.0"));
+    lcd.print(F("CALCULTR PROGRM v5.1"));
     lcd.setCursor(0, 1);
     lcd.print(F("~Upstream.0xEFA2C15~"));
     lcd.setCursor(0, 2);
@@ -111,32 +109,22 @@ void setup() {
   pinMode(BUTTON_PIN_NEG, INPUT_PULLUP);
   debouncer5.attach(BUTTON_PIN_NEG);
   debouncer5.interval(10); // interval in ms
-  wdt_enable(WDTO_8S);
+  EEPROM.write(0, 0);
 }
 
 void loop() {
   wdt_reset();
   Serial.println(freeMemory());
   serialdataPull();
-  Serial.println(freeMemory());
   calcProc();
-  Serial.println(freeMemory());
   debouncer.update();
-  Serial.println(freeMemory());
   debouncer2.update();
-  Serial.println(freeMemory());
   debouncer3.update();
-  Serial.println(freeMemory());
   div_debounce();
-  Serial.println(freeMemory());
   mult_debounce();
-  Serial.println(freeMemory());
   decim_debounce();
-  Serial.println(freeMemory());
   pi_debounce();
-  Serial.println(freeMemory());
   neg_debounce();
-  Serial.println(freeMemory());
 }
 
 //=============================================================================================================
@@ -181,7 +169,7 @@ void div_debounce() {
 
 void decim_debounce() {
   debouncer3.update();
-  byte value3 = debouncer3.read();
+  byte value3 =  debouncer3.read();
   if (value3 != olddecimvalue) { // if the current read was the same as before, dont do any of this other code until it changes
     if ( value3 == LOW ) {
     } else {
@@ -439,7 +427,7 @@ void operatorProcess(char oper8) {
   //    }//close 1
 }//close operatorProcess
 
-void doNothing() {
+int doNothing() {
   int nothing;
   //  free(nothing);
 }
