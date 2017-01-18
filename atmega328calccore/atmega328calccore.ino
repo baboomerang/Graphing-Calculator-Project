@@ -1,5 +1,10 @@
+#include <EEPROM.h>
+
 #include <Arduino.h>
 #include <MemoryFree.h>
+#include <avr/wdt.h>
+#include <avr/sleep.h>
+#include <avr/power.h>
 
 #include "BigNumber.h"
 #include <LCD.h>
@@ -40,13 +45,13 @@ byte pioverride;
 bool main_override = false;
 
 byte decimal = 0;
-bool complete = 0;
+byte complete = 0;
 
 byte looponce = 0;
 byte zero = 0;
 byte notzero = 0;
 //boolean useless = false;
-bool startprogmem = 0;
+byte startprogmem = 0;
 
 LiquidCrystal_I2C lcd(I2C_ADDR, En_pin, Rw_pin, Rs_pin, D4_pin, D5_pin, D6_pin, D7_pin);
 
@@ -62,6 +67,7 @@ BigNumber total = NULL;
 BigNumber negate = -1;
 
 void setup() {
+  delay(5000);
   Serial.begin(9600);
   BigNumber::begin();        //                                                                                                          THIS IS WHERE THE BIGNUMBER LIBRARY BEGINS
   BigNumber::setScale(20);
@@ -71,13 +77,25 @@ void setup() {
   lcd.setBacklight(HIGH);
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(F("CALCULTR PROGRM v5.0"));
-  lcd.setCursor(0, 1);
-  lcd.print(F("~Upstream.0xEFA2C15~"));
-  lcd.setCursor(0, 2);
-  lcd.print(F("BY: ILAN RODRIGUEZ"));
-  lcd.setCursor(0, 3);
-  lcd.print(F("Revision: 10/23/2016"));
+  if (EEPROM.read(0) != 0) {
+    lcd.setCursor(6, 0);
+    lcd.print("OVERFLOW");
+    lcd.setCursor(0, 1);
+    lcd.print("Recovered from fatal");
+    lcd.setCursor(0, 2);
+    lcd.print("error, be careful");
+    lcd.setCursor(0, 3);
+    lcd.print("next time! :)");
+    EEPROM.write(0, 0);
+  } else {
+    lcd.print(F("CALCULTR PROGRM v5.0"));
+    lcd.setCursor(0, 1);
+    lcd.print(F("~Upstream.0xEFA2C15~"));
+    lcd.setCursor(0, 2);
+    lcd.print(F("BY: ILAN RODRIGUEZ"));
+    lcd.setCursor(0, 3);
+    lcd.print(F("Revision: 1/18/2017"));
+  }
   pinMode(BUTTON_PIN_MULT, INPUT_PULLUP);
   debouncer.attach(BUTTON_PIN_MULT);
   debouncer.interval(10); // interval in ms
@@ -93,9 +111,11 @@ void setup() {
   pinMode(BUTTON_PIN_NEG, INPUT_PULLUP);
   debouncer5.attach(BUTTON_PIN_NEG);
   debouncer5.interval(10); // interval in ms
+  wdt_enable(WDTO_8S);
 }
 
 void loop() {
+  wdt_reset();
   Serial.println(freeMemory());
   serialdataPull();
   Serial.println(freeMemory());
@@ -120,7 +140,9 @@ void loop() {
 }
 
 //=============================================================================================================
-
+ISR( WDT_vect ) {
+  EEPROM.write(0, 237);
+}
 //=============================================================================================================
 
 void serialdataPull() {
@@ -197,7 +219,7 @@ void neg_debounce() {
 }
 
 void calcProc() {  //===============================================================================================================================================================================================================================
-  if (buttonprocessed == 1) {
+  if (buttonprocessed == 1 && (startprogmem || byteChar == 'C')) {
     //    Serial.print("BUTTONPRESSEDfreeMemory()=");
     //    Serial.println(freeMemory());
     //    delay(100);
@@ -437,6 +459,7 @@ void doNothing() {
 BigNumber SecondNumber() {
 
   while ( 1 ) {
+    wdt_disable();
     decim_debounce();
     serialdataPull();
     if (buttonprocessed == 1 ) { // only check through this if else system once ( when the button is pressed once )
@@ -504,6 +527,7 @@ BigNumber SecondNumber() {
       buttonprocessed = 0;
     } // end of IF BUTTON PROCESSED = 1 ; ANYTHING IN BETWEEN WILL BE CHECKED FOR AS A CONDITION TO EXECUTE. USE IT AS YOU WISH.
   }
+  wdt_enable(WDTO_4S);
   return second;
 } //end of secondnumber
 // ========================================================================================================================================================================================================================================
