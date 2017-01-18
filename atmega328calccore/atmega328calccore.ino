@@ -42,8 +42,6 @@ bool main_override = false;
 byte decimal = 0;
 bool complete = 0;
 
-
-
 byte looponce = 0;
 byte zero = 0;
 byte notzero = 0;
@@ -54,7 +52,6 @@ LiquidCrystal_I2C lcd(I2C_ADDR, En_pin, Rw_pin, Rs_pin, D4_pin, D5_pin, D6_pin, 
 
 byte buttonprocessed = 0;
 byte incomingByte = 0;
-
 char byteChar = 0;
 
 BigNumber divideByBase10 = 1;
@@ -62,25 +59,21 @@ BigNumber bignumByte = 0;
 BigNumber first = 0;
 BigNumber second = 0;
 BigNumber total = NULL;
-//int pi = 0;
 BigNumber negate = -1;
 
 void setup() {
   Serial.begin(9600);
   BigNumber::begin();        //                                                                                                          THIS IS WHERE THE BIGNUMBER LIBRARY BEGINS
   BigNumber::setScale(20);
-  Serial.print("BEFORE BIGNUMBERS AND LCD SETUPfreeMemory()=");
-  Serial.println(freeMemory());
-  //  delay(100);
   lcd.begin (20, 4, LCD_5x8DOTS);
   lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE);
   lcd.home();
   lcd.setBacklight(HIGH);
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(F("CALCULTR PROGRM v4.6"));
+  lcd.print(F("CALCULTR PROGRM v5.0"));
   lcd.setCursor(0, 1);
-  lcd.print(F("~Heavily  Optimized~"));
+  lcd.print(F("~Upstream.0xEFA2C15~"));
   lcd.setCursor(0, 2);
   lcd.print(F("BY: ILAN RODRIGUEZ"));
   lcd.setCursor(0, 3);
@@ -100,23 +93,30 @@ void setup() {
   pinMode(BUTTON_PIN_NEG, INPUT_PULLUP);
   debouncer5.attach(BUTTON_PIN_NEG);
   debouncer5.interval(10); // interval in ms
-  Serial.print("AFTER SETUPfreeMemory()=");
-  Serial.println(freeMemory());
-
-  //  delay(100);
 }
 
 void loop() {
+  Serial.println(freeMemory());
   serialdataPull();
+  Serial.println(freeMemory());
   calcProc();
+  Serial.println(freeMemory());
   debouncer.update();
+  Serial.println(freeMemory());
   debouncer2.update();
+  Serial.println(freeMemory());
   debouncer3.update();
+  Serial.println(freeMemory());
   div_debounce();
+  Serial.println(freeMemory());
   mult_debounce();
+  Serial.println(freeMemory());
   decim_debounce();
+  Serial.println(freeMemory());
   pi_debounce();
+  Serial.println(freeMemory());
   neg_debounce();
+  Serial.println(freeMemory());
 }
 
 //=============================================================================================================
@@ -198,8 +198,8 @@ void neg_debounce() {
 
 void calcProc() {  //===============================================================================================================================================================================================================================
   if (buttonprocessed == 1) {
-    Serial.print("BUTTONPRESSEDfreeMemory()=");
-    Serial.println(freeMemory());
+    //    Serial.print("BUTTONPRESSEDfreeMemory()=");
+    //    Serial.println(freeMemory());
     //    delay(100);
     switch (byteChar) {
       //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -227,7 +227,7 @@ void calcProc() {  //===========================================================
             lcd.blink();
             complete = 0;
           }
-          printBignum(first, 1);
+          printBignum(first, 1, false);
           break;
         }
       //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -247,7 +247,7 @@ void calcProc() {  //===========================================================
           lcd.print(F("                    "));
           lcd.setCursor(0, 0);
           first = first * BigNumber(negate);
-          printBignum(first, 1);
+          printBignum(first, 1, false);
         }
         break;
 
@@ -450,7 +450,7 @@ BigNumber SecondNumber() {
           second = second + BigNumber(bignumByte) / BigNumber(divideByBase10);
         }
         //        lcd.setCursor(0, 2);
-        printBignum(second, 2);
+        printBignum(second, 2, false);
       }
       if (byteChar == 'p') {
         BigNumber(pi) = BigNumber("3.141592653589793238");
@@ -486,7 +486,7 @@ BigNumber SecondNumber() {
         lcd.print(F("                    "));
         lcd.setCursor(0, 2);
         second = second * BigNumber(negate);
-        printBignum(second, 2);
+        printBignum(second, 2, false);
       }
       //--------------------------------------------------------------------
       if (byteChar == '.') {
@@ -518,9 +518,8 @@ BigNumber SecondNumber() {
 void printBignum (BigNumber n, byte arith_part, bool isTotal) {
   main_override = false;
   int p;
-  Serial.print("BEFORE LCDPRINTING BIGNUM freeMemory()=");
-  Serial.println(freeMemory());
-
+  //  Serial.print("BEFORE LCDPRINTING BIGNUM freeMemory()=");
+  //  Serial.println(freeMemory());
   bool startcounting = false;
   char * s = n.toString ();
   //  Serial.println (s);
@@ -538,8 +537,8 @@ void printBignum (BigNumber n, byte arith_part, bool isTotal) {
         lcd.print(s[i]);
       }
     }
-// changed the beginning because it makes no effect on the system. Just make an exception if you are printing total, or printing first as the total, bypass this check completly with a boolean
-   if(isTotal && isPunct(s[i])) startcounting = true; else if (isPunct(s[i]) && !decimal && !isTotal) break; else if (isPunct(s[i]) && decimal) startcounting = true;
+    // changed the beginning because it makes no effect on the system. Just make an exception if you are printing total, or printing first as the total, bypass this check completly with a boolean
+    if (isTotal && isPunct(s[i])) startcounting = true; else if (isPunct(s[i]) && !decimal && !isTotal) break; else if (isPunct(s[i]) && decimal) startcounting = true;
 
     if (startcounting == true) {
       //      Serial.println("=============START COUNTING IS TRUE=========");
@@ -591,9 +590,6 @@ void printBignum (BigNumber n, byte arith_part, bool isTotal) {
     //    }
   }
   free(s);
-  //  Serial.println(" ");
-  //  Serial.print("BEFORE LCDPRINTING BIGNUM freeMemory()=");
-  //  Serial.println(freeMemory());
 }
 
 // ========================================================================================================================================================================================================================================
@@ -604,6 +600,11 @@ void printBignum (BigNumber n, byte arith_part, bool isTotal) {
 
 // ========================================================================================================================================================================================================================================
 //( zero == 4 && notzero == 1 ) ? cutHere = v - 2  : ( zero >= 8 && notzero == 0 ) ? v = thedecim : cutHere = predecimlength;
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //void lcdprintBignum (BigNumber zt) {
 //  Serial.print("BEFORE LCDPRINTING BIGNUM freeMemory()=");
 //  Serial.println(freeMemory());
@@ -667,10 +668,12 @@ void printBignum (BigNumber n, byte arith_part, bool isTotal) {
 //  //========================================================================================================
 //}// end of lcdprintbignum
 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 void memoryclear() {
-  Serial.print("MEMORYCLEAR() FUNCTION RIGHT BEFOREfreeMemory()=");
-  Serial.println(freeMemory());
-  delay(100);
   main_override = false;
   total = NULL;
   divideByBase10 = 1;
@@ -682,39 +685,29 @@ void memoryclear() {
   lcd.clear();
   lcd.blink();
   second = 0;
-  Serial.print("MEMORYCLEAR() AFTER THATfreeMemory()=");
-  Serial.println(freeMemory());
-  delay(100);
 }
 
 void result_as_input() {
   if ( total != 0 ) {
     wipeDisplay();
     lcd.setCursor(0, 0);
-    printBignum(first, 1);
+    printBignum(first, 1, true);
   }
 }
 
 void wipeDisplay() {
-  Serial.print("BEFORE CLEARINGfreeMemory()=");
-  Serial.println(freeMemory());
-  delay(100);
   lcd.clear();
   lcd.blink();
-  Serial.print("AFTERCLEARNINGfreeMemory()=");
-  Serial.println(freeMemory());
-  delay(100);
 }
 
 void reportResult() {
   lcd.setCursor(0, 3);
-  printBignum(total, 3);
+  printBignum(total, 3, true);
   first = 0, second = 0; // reset values back to zero for next use
   complete = 1;
 }
 
 int checkednotzero() {
-  //Serial.println("Checked Integer Was Not Zero ");
   notzero++;
   zero = 0;
 }
