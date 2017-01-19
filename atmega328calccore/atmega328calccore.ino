@@ -65,8 +65,13 @@ BigNumber second = 0;
 BigNumber total = NULL;
 BigNumber negate = -1;
 
+ISR( WDT_vect ) {
+  EEPROM.write(2, 99);
+  //  lcd.print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+}
+
 void setup() {
-  wdt_enable(WDTO_8S);
+  wdt_disable();
   Serial.begin(9600);
   BigNumber::begin();        //                                                                                                          THIS IS WHERE THE BIGNUMBER LIBRARY BEGINS
   BigNumber::setScale(20);
@@ -76,8 +81,8 @@ void setup() {
   lcd.setBacklight(HIGH);
   lcd.clear();
   lcd.setCursor(0, 0);
-  int eepromvalue = EEPROM.read(0);
-  if (eepromvalue == 237) {
+  byte Evalue = EEPROM.read(2);
+  if (Evalue == 99) {
     lcd.setCursor(6, 0);
     lcd.print(F("OVERFLOW"));
     lcd.setCursor(0, 1);
@@ -86,14 +91,15 @@ void setup() {
     lcd.print(F("error, be careful "));
     lcd.setCursor(0, 3);
     lcd.print(F("next time! :)"));
+    EEPROM.write(2, 0);
   } else {
-    lcd.print(F("CALCULTR PROGRM v5.1"));
+    lcd.print(F("CALCULTR PROGRM v5.2"));
     lcd.setCursor(0, 1);
-    lcd.print(F("~Upstream.0xEFA2C15~"));
+    lcd.print(F("~with loads of bugs~"));
     lcd.setCursor(0, 2);
     lcd.print(F("BY: ILAN RODRIGUEZ"));
     lcd.setCursor(0, 3);
-    lcd.print(F("Revision: 1/18/2017"));
+    lcd.print(F("Revision: 1/19/2017"));
   }
   pinMode(BUTTON_PIN_MULT, INPUT_PULLUP);
   debouncer.attach(BUTTON_PIN_MULT);
@@ -110,12 +116,13 @@ void setup() {
   pinMode(BUTTON_PIN_NEG, INPUT_PULLUP);
   debouncer5.attach(BUTTON_PIN_NEG);
   debouncer5.interval(10); // interval in ms
-  eepromvalue != 0 ? EEPROM.write(0, 0) : doNothing();
+  watchdogSetup();
 }
 
 void loop() {
   wdt_reset();
-  Serial.println(freeMemory());
+  //  Serial.println(eepromvalue);
+  //  Serial.println(freeMemory());
   serialdataPull();
   calcProc();
   debouncer.update();
@@ -127,14 +134,29 @@ void loop() {
   pi_debounce();
   neg_debounce();
 }
-
+//void smallWDT(void) {
+//  WDTCSR |= (1 << WDCE) | (1 << WDE);
+//  WDTCSR = (1 << WDIE) | (1 << WDE) | (0 << WDP3) | (1 << WDP2) | (1 << WDP1) | (1 << WDP0);
+//}
 //=============================================================================================================
-ISR( WDT_vect ) {
-  EEPROM.write(0, 237);
-  lcd.clear();
-  lcd.clear();
-  lcd.clear();
-  lcd.print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+void watchdogSetup(void)
+{
+  cli();  // disable all interrupts
+  wdt_reset(); // reset the WDT timer
+  /*
+    WDTCSR configuration:
+    WDIE = 1: Interrupt Enable
+    WDE = 1 :Reset Enable
+    WDP3 = 0 :For 2000ms Time-out
+    WDP2 = 1 :For 2000ms Time-out
+    WDP1 = 1 :For 2000ms Time-out
+    WDP0 = 1 :For 2000ms Time-out
+  */
+  // Enter Watchdog Configuration mode:
+  WDTCSR |= (1 << WDCE) | (1 << WDE);
+  // Set Watchdog settings:
+  WDTCSR = (1 << WDIE) | (1 << WDE) | (1 << WDP3) | (0 << WDP2) | (0 << WDP1) | (0 << WDP0);
+  sei();
 }
 //=============================================================================================================
 
@@ -432,7 +454,7 @@ void operatorProcess(char oper8) {
   //    }//close 1
 }//close operatorProcess
 
-int doNothing() {
+void doNothing() {
   int nothing;
   //  free(nothing);
 }
@@ -452,7 +474,7 @@ int doNothing() {
 BigNumber SecondNumber() {
 
   while ( 1 ) {
-    wdt_disable();
+    wdt_reset();
     decim_debounce();
     serialdataPull();
     if (buttonprocessed == 1 ) { // only check through this if else system once ( when the button is pressed once )
@@ -520,7 +542,8 @@ BigNumber SecondNumber() {
       buttonprocessed = 0;
     } // end of IF BUTTON PROCESSED = 1 ; ANYTHING IN BETWEEN WILL BE CHECKED FOR AS A CONDITION TO EXECUTE. USE IT AS YOU WISH.
   }
-  wdt_enable(WDTO_4S);
+  //  wdt_enable();
+  //  smallWDT();
   return second;
 } //end of secondnumber
 // ========================================================================================================================================================================================================================================
