@@ -582,7 +582,7 @@ void printBignum (BigNumber n, byte arith_part, bool isTotal) {
 
     if (startcounting == true) {
       //      Serial.println("=============START COUNTING IS TRUE=========");
-      s[i] != '0' || '.' ? checkednotzero() : s[i] != '.' ? zero++ : doNothing();
+      (s[i] != '0' || '.') ? checkednotzero() : (s[i] != '.' && s[i] == '0') ? zero++ : doNothing();
       main_override ? p = 2 : lcd.print(s[i]);
       //      Serial.println("notzero : " + String(notzero) + " zero" + String(zero));
       if (notzero >= 1 && zero >= 1) {
