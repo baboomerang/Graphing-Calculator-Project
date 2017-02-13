@@ -454,7 +454,7 @@ void operatorProcess(char oper8) {
   //    }//close 1
 }//close operatorProcess
 
-void doNothing() {
+int doNothing() {
   int nothing;
   //  free(nothing);
 }
@@ -582,14 +582,18 @@ void printBignum (BigNumber n, byte arith_part, bool isTotal) {
 
     if (startcounting == true) {
       //      Serial.println("=============START COUNTING IS TRUE=========");
-      (s[i] != '0' || '.') ? checkednotzero() : (s[i] != '.' && s[i] == '0') ? zero++ : doNothing();
+      (s[i] != '0' || s[i] != '.') ? checkednotzero() : s[i] == '0' ? zero++ : doNothing();
       main_override ? p = 2 : lcd.print(s[i]);
+      Serial.println(String(notzero) + " " + String(zero));
       //      Serial.println("notzero : " + String(notzero) + " zero" + String(zero));
       if (notzero >= 1 && zero >= 1) {
         //        Serial.println("WE GET THE S I PRINTED TO BLANK HOPEFULLY IN THE CODE");
+        Serial.println("so we got to this if statement");
         s[i] != '0' ? lcd.print(s[i]) : main_override = true;
-        //        delay(50);
+        delay(500);
       } else if (zero > 8 && notzero == 1) {
+        Serial.println("we got more than 8 zeros and a 1 I guess");
+        //        break;
         //        Serial.println("zero > 8 && notzero == 0");
       }
       //      if (notzero < 1 && zero < 5) {
