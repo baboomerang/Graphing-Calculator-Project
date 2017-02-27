@@ -113,7 +113,7 @@ char byteChar;
 
 unsigned int num_x = 0;
 
-char numberStack[100];
+char infixRAWnumberStack[100];
 char infixstring[1000];
 //char postfixstring[1000];
 
@@ -121,10 +121,10 @@ unsigned int infX = 0;
 
 //bool graph = LOW;
 
-long inputorder[26];
+long numberStack_FINAL[26];
 
 char procChar;
-unsigned int index_position = 0;
+unsigned int num_indx = 0;
 unsigned int openparenth_count = 0;
 
 unsigned int infix_key_x = 0;
@@ -212,8 +212,8 @@ void loop() {
   &d name of your display object
   x = x data point
   y = y datapont
-  gx = x graph index_positionation (lower left)
-  gy = y graph index_positionation (lower left)
+  gx = x graph num_indxation (lower left)
+  gy = y graph num_indxation (lower left)
   w = width of graph
   h = height of graph
   xlo = lower bound of x axis
@@ -265,7 +265,7 @@ void graphproc() {
       procChar = char(infixstring[i]);
       switch (procChar) {
         case '0' ... '9':
-          numberStack[num_x] = procChar;
+          infixRAWnumberStack[num_x] = procChar;
           num_x += 1;
           break;
         case '(':
@@ -274,14 +274,14 @@ void graphproc() {
         case ')':
           openparenth_count -= 1;
           cutHere = num_x;
-          openparenth_count == 0 ? save_num(start, cutHere, index_position) : abort();
+          openparenth_count == 0 ? save_num(start, cutHere, num_indx) : abort();  //consider editing this abort() in the futre, why should we abort if we have additional parenthesis? assuming correct syntax?
           //test_index(); // DONT TAKE THIS OFF LOL
           syntax_check(i);
           break;
         case '-':
           cutHere = num_x;
-          save_num(start, cutHere, index_position);
-          index_position++;
+          save_num(start, cutHere, num_indx);
+          num_indx++;
           infix_stack_reference[infix_key_x] = 2;
           infix_key_x++;
           start = cutHere;
@@ -289,17 +289,21 @@ void graphproc() {
           break;
         case '+':
           cutHere = num_x;
-          save_num(start, cutHere, index_position);
-          index_position++;
+          save_num(start, cutHere, num_indx);
+          num_indx++;
           infix_stack_reference[infix_key_x] = 3;
           infix_key_x++;
           start = cutHere;
           syntax_check(i);
           break;
         case '*':
+          /*COMPARE THE NUMX VALUE WHEN CALLED TWICE,
+            IT STAYS THE SAME SO ADD A CHECKING CODE BLOCK FOR EACH OPERATOR CASE
+            SO IF THE NUMX DOESNT CHANGE WHEN ANOTHER OPERATOR IS CALLED, (THERE WASNT A NUMBER INBETWEEN) IT HAS TO MEAN A DOUBLE OPERATOR ERROR
+            BY THE USER*/
           cutHere = num_x;
-          save_num(start, cutHere, index_position);
-          index_position++;
+          save_num(start, cutHere, num_indx);
+          num_indx++;
           infix_stack_reference[infix_key_x] = 4;
           infix_key_x++;
           start = cutHere;
@@ -307,11 +311,11 @@ void graphproc() {
           break;
         case '/':
           cutHere = num_x;
-          save_num(start, cutHere, index_position);
+          save_num(start, cutHere, num_indx);
           // save num also performs infix_key_x++  - just a tip and dont forget that
           //calling this function and successfully saving a number adds 1(meaning a number) to the reference stack but also ++ to the X location of that stack.
           //that x location variable is named infix_key_x and thus doesnt really complicate anything. Infact it just makes it more confusing because the infix_key_x is modified in different nested functions.
-          index_position++;
+          num_indx++;
           infix_stack_reference[infix_key_x] = 5;
           infix_key_x++;
           start = cutHere;
@@ -323,9 +327,9 @@ void graphproc() {
 }
 
 //void test_index() {
-//  for (int lol = 0; lol < (sizeof(inputorder) / sizeof(long)); lol++) {
-//    Serial.println(" So this is what we have for input index in " + String(lol) + " NUMBER:   " + String(inputorder[lol]) );
-//    if (inputorder[lol] == 0) break;
+//  for (int lol = 0; lol < (sizeof(numberStack_FINAL) / sizeof(long)); lol++) {
+//    Serial.println(" So this is what we have for input index in " + String(lol) + " NUMBER:   " + String(numberStack_FINAL[lol]) );
+//    if (numberStack_FINAL[lol] == 0) break;
 //  }
 //  for (int lol = 0; lol < ((sizeof(infix_stack_reference)) / sizeof(int)); lol++) {
 //    Serial.println(" ~~~~~?@#!#!@$?!@$!@$!@#>!@3?!>@#   CALC PROC POSITION " + String(lol) + " TYPE STATUS:   " + String(infix_stack_reference[lol]) );
@@ -336,16 +340,25 @@ void graphproc() {
 void save_num(int start, int cutpoint, int index_xpos) {
   infix_stack_reference[infix_key_x] = 1;
   infix_key_x++;
-  String Z = String(numberStack);
+  String Z = String(infixRAWnumberStack);
   String Zshort = Z.substring(start, cutpoint);
+  //the cutpoint does not include the value at the cutpoint. its an exclusion limit. if we had 35456 and cut point was 4 with start 0, we would just get the first 3
   long i = Zshort.toInt();
-  inputorder[index_xpos] = i;
-  Serial.println("OUTPUT: we have this for Z / numberstack simplified " + String(Z) + "    OUTPUT: we have this for individual i.shortstring saved " + String(i));
+  numberStack_FINAL[index_xpos] = i;
+  //numberStack_FINAL IS WHERE ALL THE FULL NUMBERS ARE STORED.  numberStack_FINAL[x] = "23223" numberStack_FINAL[x+1] = "3567" .... etc
+  Serial.println("OUTPUT: we have this for Z / infixRAWnumberStack simplified " + String(Z) + "    OUTPUT: we have this for individual i.shortstring saved " + String(i));
 }
 
 void syntax_check(int end_of_string) {
+  //  if (infix_stack_reference[infix_key_x] == infix_stack_reference[infix_key_x - 1] ) {
+  //    Serial.println("MAJOR SYNTAX COMPLICATION, YOU HAVE A DOUBLE OPERATOR SOMEWHERE");
+  //    //here you would write some abort code, or tell the user that the code has an extra operator
+  //    abort();
+  //  }
+  Serial.println("so we have end of string " + String(end_of_string));
   if (end_of_string == (strlen(infixstring) - 1)) {
     openparenth_count != 0 ? abort() : calculate_postfix();
+    Serial.println("so we didnt abort either? NICE");
   }
 }
 
