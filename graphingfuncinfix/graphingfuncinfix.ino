@@ -279,6 +279,11 @@ void graphproc() {
           syntax_check(i);
           break;
         case '-':
+          if(cutHere == num_x) {
+            Serial.println("doubleoperatorerror");
+            Serial.println("aborting.......");
+            abort();
+          } else {
           cutHere = num_x;
           save_num(start, cutHere, num_indx);
           num_indx++;
@@ -286,8 +291,14 @@ void graphproc() {
           infix_key_x++;
           start = cutHere;
           syntax_check(i);
+          }
           break;
         case '+':
+          if(cutHere == num_x) {
+            Serial.println("doubleoperatorerror");
+            Serial.println("aborting.......");
+            abort();
+          } else {
           cutHere = num_x;
           save_num(start, cutHere, num_indx);
           num_indx++;
@@ -295,12 +306,18 @@ void graphproc() {
           infix_key_x++;
           start = cutHere;
           syntax_check(i);
+          }
           break;
         case '*':
+          if(cutHere == num_x) {
+            Serial.println("doubleoperatorerror");
+            Serial.println("aborting.......");
+            abort();
+          } else {
           /*COMPARE THE NUMX VALUE WHEN CALLED TWICE,
             IT STAYS THE SAME SO ADD A CHECKING CODE BLOCK FOR EACH OPERATOR CASE
             SO IF THE NUMX DOESNT CHANGE WHEN ANOTHER OPERATOR IS CALLED, (THERE WASNT A NUMBER INBETWEEN) IT HAS TO MEAN A DOUBLE OPERATOR ERROR
-            BY THE USER*/
+            BY THE USER                                 ALREADY ADDED 9:14 AM 2/27/17*/
           cutHere = num_x;
           save_num(start, cutHere, num_indx);
           num_indx++;
@@ -308,8 +325,14 @@ void graphproc() {
           infix_key_x++;
           start = cutHere;
           syntax_check(i);
+          }
           break;
         case '/':
+          if(cutHere == num_x) {
+            Serial.println("doubleoperatorerror");
+            Serial.println("aborting.......");
+            abort();
+          } else {
           cutHere = num_x;
           save_num(start, cutHere, num_indx);
           // save num also performs infix_key_x++  - just a tip and dont forget that
@@ -320,6 +343,7 @@ void graphproc() {
           infix_key_x++;
           start = cutHere;
           syntax_check(i);
+          }
           break;
       }
     }
@@ -353,7 +377,7 @@ void syntax_check(int end_of_string) {
   //  if (infix_stack_reference[infix_key_x] == infix_stack_reference[infix_key_x - 1] ) {
   //    Serial.println("MAJOR SYNTAX COMPLICATION, YOU HAVE A DOUBLE OPERATOR SOMEWHERE");
   //    //here you would write some abort code, or tell the user that the code has an extra operator
-  //    abort();
+  //    abort(); NOT NECESSARY HERE, THIS IS NOT THE OPTIMAL PLACE TO CODE. ALREADY IMPLEMENTED DURING PROCCHAR INDEXING. DEBUNKED
   //  }
   Serial.println("so we have end of string " + String(end_of_string));
   if (end_of_string == (strlen(infixstring) - 1)) {
