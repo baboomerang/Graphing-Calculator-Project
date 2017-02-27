@@ -124,15 +124,15 @@ unsigned int infX = 0;
 long inputorder[26];
 
 char procChar;
-unsigned int index_stack = 0;
+unsigned int index_position = 0;
 unsigned int openparenth_count = 0;
 
-unsigned int inputbyte = 0;
+unsigned int infix_key_x = 0;
 
-int infix_stack_decoded[50];
+int infix_stack_reference[50];
 int postfix_opstack[50];
 
-int postfix_stack_decoded[50];
+int postfix_stack_reference[50];
 unsigned int numberrepeat = 0;
 unsigned int location = 0;
 
@@ -212,8 +212,8 @@ void loop() {
   &d name of your display object
   x = x data point
   y = y datapont
-  gx = x graph index_stackation (lower left)
-  gy = y graph index_stackation (lower left)
+  gx = x graph index_positionation (lower left)
+  gy = y graph index_positionation (lower left)
   w = width of graph
   h = height of graph
   xlo = lower bound of x axis
@@ -274,43 +274,46 @@ void graphproc() {
         case ')':
           openparenth_count -= 1;
           cutHere = num_x;
-          openparenth_count == 0 ? save_num(start, cutHere, index_stack) : abort();
+          openparenth_count == 0 ? save_num(start, cutHere, index_position) : abort();
           //test_index(); // DONT TAKE THIS OFF LOL
           syntax_check(i);
           break;
         case '-':
           cutHere = num_x;
-          save_num(start, cutHere, index_stack);
-          index_stack++;
-          infix_stack_decoded[inputbyte] = 2;
-          inputbyte++;
+          save_num(start, cutHere, index_position);
+          index_position++;
+          infix_stack_reference[infix_key_x] = 2;
+          infix_key_x++;
           start = cutHere;
           syntax_check(i);
           break;
         case '+':
           cutHere = num_x;
-          save_num(start, cutHere, index_stack);
-          index_stack++;
-          infix_stack_decoded[inputbyte] = 3;
-          inputbyte++;
+          save_num(start, cutHere, index_position);
+          index_position++;
+          infix_stack_reference[infix_key_x] = 3;
+          infix_key_x++;
           start = cutHere;
           syntax_check(i);
           break;
         case '*':
           cutHere = num_x;
-          save_num(start, cutHere, index_stack);
-          index_stack++;
-          infix_stack_decoded[inputbyte] = 4;
-          inputbyte++;
+          save_num(start, cutHere, index_position);
+          index_position++;
+          infix_stack_reference[infix_key_x] = 4;
+          infix_key_x++;
           start = cutHere;
           syntax_check(i);
           break;
         case '/':
           cutHere = num_x;
-          save_num(start, cutHere, index_stack);
-          index_stack++;
-          infix_stack_decoded[inputbyte] = 5;
-          inputbyte++;
+          save_num(start, cutHere, index_position);
+          // save num also performs infix_key_x++  - just a tip and dont forget that
+          //calling this function and successfully saving a number adds 1(meaning a number) to the reference stack but also ++ to the X location of that stack.
+          //that x location variable is named infix_key_x and thus doesnt really complicate anything. Infact it just makes it more confusing because the infix_key_x is modified in different nested functions.
+          index_position++;
+          infix_stack_reference[infix_key_x] = 5;
+          infix_key_x++;
           start = cutHere;
           syntax_check(i);
           break;
@@ -324,19 +327,19 @@ void graphproc() {
 //    Serial.println(" So this is what we have for input index in " + String(lol) + " NUMBER:   " + String(inputorder[lol]) );
 //    if (inputorder[lol] == 0) break;
 //  }
-//  for (int lol = 0; lol < ((sizeof(infix_stack_decoded)) / sizeof(int)); lol++) {
-//    Serial.println(" ~~~~~?@#!#!@$?!@$!@$!@#>!@3?!>@#   CALC PROC POSITION " + String(lol) + " TYPE STATUS:   " + String(infix_stack_decoded[lol]) );
-//    if (infix_stack_decoded[lol] == 0) break;
+//  for (int lol = 0; lol < ((sizeof(infix_stack_reference)) / sizeof(int)); lol++) {
+//    Serial.println(" ~~~~~?@#!#!@$?!@$!@$!@#>!@3?!>@#   CALC PROC POSITION " + String(lol) + " TYPE STATUS:   " + String(infix_stack_reference[lol]) );
+//    if (infix_stack_reference[lol] == 0) break;
 //  }
 //}
 
-void save_num(int start, int cutpoint, int index_stack) {
-  infix_stack_decoded[inputbyte] = 1;
-  inputbyte++;
+void save_num(int start, int cutpoint, int index_xpos) {
+  infix_stack_reference[infix_key_x] = 1;
+  infix_key_x++;
   String Z = String(numberStack);
   String Zshort = Z.substring(start, cutpoint);
   long i = Zshort.toInt();
-  inputorder[index_stack] = i;
+  inputorder[index_xpos] = i;
   Serial.println("OUTPUT: we have this for Z / numberstack simplified " + String(Z) + "    OUTPUT: we have this for individual i.shortstring saved " + String(i));
 }
 
@@ -347,14 +350,14 @@ void syntax_check(int end_of_string) {
 }
 
 void calculate_postfix() {
-  inputbyte = 0;
-  for ( int i = 1; i != 0; i = infix_stack_decoded[inputbyte] ) {
-    i = infix_stack_decoded[inputbyte];
-    inputbyte++;
+  infix_key_x = 0;
+  for ( int i = 1; i != 0; i = infix_stack_reference[infix_key_x] ) {
+    i = infix_stack_reference[infix_key_x];
+    infix_key_x++;
     if ( i == 1 ) {
       copy(numberrepeat, 1);
       numberrepeat++;
-      if ( infix_stack_decoded[inputbyte + 1] == 0 ) {
+      if ( infix_stack_reference[infix_key_x + 1] == 0 ) {
         for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
           int opr8tr = postfix_opstack[p];
           if ( opr8tr != 0 ) {
@@ -370,13 +373,13 @@ void calculate_postfix() {
       pushtostack(3, i);
     }
   }
-  for ( int p = ((sizeof(postfix_stack_decoded) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-    Serial.println("postfix_stack_decoded[" + String(p) + "] =  " + String(postfix_stack_decoded[p]));
+  for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
+    Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
   }
 }
 
 void copy(byte location, byte input ) {
-  postfix_stack_decoded[location] = input;
+  postfix_stack_reference[location] = input;
 }
 
 void pushtostack(byte precedence, int opr8tr) {
@@ -400,9 +403,9 @@ void pushtostack(byte precedence, int opr8tr) {
 }
 
 void evaluate_postfix(int p) {
-  for ( int p = 0 ; p <= ((sizeof(postfix_stack_decoded) - 1) / sizeof(int)) ; p++ ) {
+  for ( int p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p++ ) {
     int number_index;
-    int value = postfix_stack_decoded[p];
+    int value = postfix_stack_reference[p];
     value == 1 ? number_index++ : number_index == number_index;
     //    value > 1 ? placeholder(DELETE THIS IT WONT COMPILE) : EXCEPTION();
   }
