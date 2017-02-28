@@ -389,7 +389,7 @@ void syntax_check(int end_of_string) {
 void calculate_postfix() {
   infix_key_x = 0;
   for ( int i = 1; i != 0; i = infix_stack_reference[infix_key_x] ) {
-    i = infix_stack_reference[infix_key_x];
+    i = infix_stack_reference[infix_key_x];   // REDUNDANCY CHECK, THIS IS REPETITIVE OF THE ACTION TO PERFORM ON EACH LOOP. ^^^^  sets it twice, make sure this line is needed or not just to simplify code.
     infix_key_x++;
     if ( i == 1 ) {
       copy(numberrepeat, 1);
