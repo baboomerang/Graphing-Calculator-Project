@@ -394,21 +394,27 @@ void calculate_postfix() {
     if ( i == 1 ) {
       copy(numberrepeat, 1);
       numberrepeat++;
-      if ( infix_stack_reference[infix_key_x + 1] == 0 ) {
+      /* we know that the infix notation expression will always end with a 1, 
+      so by piggybacking on that predictable ending, we can tie together 
+      a final check to see if its actually the end of the string*/
+      if ( infix_stack_reference[infix_key_x + 1] == 0 ) { // WARNING!!!!!!!!!!!!!!!!! this code might potentially be problematic if we have infix expressions that end in parenthesis.
+//======== Operator Stack Popping Code
         for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
           int opr8tr = postfix_opstack[p];
-          if ( opr8tr != 0 ) {
+          if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
             copy(numberrepeat, opr8tr);
             numberrepeat++;
           }
         }
+      //=====================
       }
-    }
+    } // end of if i == 1 so anything below this checkes for other types of reference numbers. *ie operators or modifier characters.
     if ( i == 2 || i == 3 ) {
       pushtostack(2, i);
     } else if ( i == 4 || i == 5 ) {
       pushtostack(3, i);
-    }
+    } else if ( i == 6 ) {
+      pushtostack(-,i);
   }
   for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
     Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
@@ -423,10 +429,11 @@ void pushtostack(byte precedence, int opr8tr) {
   //  Serial.println("precedence: " + String(precedence) + " operator value: " + String(opr8tr));
   //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
   for ( int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-    if ( p == 0 && postfix_opstack[p] == 0 ) {
+    if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
       postfix_opstack[p] = opr8tr;
       //      Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
-    } else if ((opr8tr < postfix_opstack[p]) || (opr8tr == postfix_opstack[p] || (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5) )  )    )  {
+     //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '            
+    } else if ((opr8tr!=6 && precedence!=6) && (opr8tr < postfix_opstack[p]) || (opr8tr == postfix_opstack[p] || (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
       int prev_opr8tr = postfix_opstack[p];
       copy(numberrepeat, prev_opr8tr);
       numberrepeat++;
