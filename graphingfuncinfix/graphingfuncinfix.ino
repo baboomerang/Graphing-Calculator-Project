@@ -414,7 +414,7 @@ void calculate_postfix() {
     } else if ( i == 4 || i == 5 ) {
       pushtostack(3, i);
     } else if ( i == 6 ) {
-      pushtostack(-,i);
+      pushtostack(6, i);
   }
   for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
     Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
