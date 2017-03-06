@@ -252,6 +252,10 @@ void copy(byte location, byte input ) {
 }
 
 void pushtostack(byte precedence, int opr8tr) {
+  for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
+    Serial.print(String(postfix_opstack[i]));
+  }
+  Serial.println("");
   delay(100);
   Serial.println("precedence: " + String(precedence) + " operator value: " + String(opr8tr));
   //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
@@ -261,7 +265,7 @@ void pushtostack(byte precedence, int opr8tr) {
       postfix_opstack[p] = opr8tr;
       //      Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
       //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '
-    } else if ((precedence != 255) && (opr8tr < postfix_opstack[p]) || (opr8tr == postfix_opstack[p] || (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
+    } else if ((precedence != 255) && (opr8tr < postfix_opstack[p] && postfix_opstack[p] != 6) || ( (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
       /* CODE EXPLANATION -
         So first, we initialize a local temp variable to store the value of the fualty operator
         then we copy that temp variable to the postfix reference stack (ie. "popping" the stack)
@@ -271,11 +275,16 @@ void pushtostack(byte precedence, int opr8tr) {
       copy(numberrepeat, selected_oper8tr_in_opstack);
       postfix_opstack[p] = opr8tr;
       for ( int loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(int)); loc ++ ) postfix_opstack[loc] = 0;
-    } else if ((opr8tr != 6 && opr8tr > postfix_opstack[p] && postfix_opstack[p] != 0))  {
+    } else if ((opr8tr > postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
       postfix_opstack[ p + 1 ] = opr8tr;
       break;
-    }  else if (precedence == 255 && opr8tr == 6) {
-      postfix_opstack[p] = opr8tr;
+    }
+    else if ((opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
+      postfix_opstack[ p + 1 ] = opr8tr;
+      break;
+    }
+    else if (precedence == 255 && opr8tr == 6) {
+      //      postfix_opstack[p] = opr8tr;
     } else if (precedence == 255 && opr8tr == 7) {
       //      for (int z = p ; z != 6 ; z--) {
       //        int pop_operator = postfix_opstack[z];
