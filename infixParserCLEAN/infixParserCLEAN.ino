@@ -18,7 +18,7 @@ char infixstring[1000];
 //processed stacks of information
 int infix_stack_reference[50]; // reference key showing INFIX notation of the expression in a simplified view
 int postfix_stack_reference[50]; // reference key showing POSTFIX notation of the expression in a simplified view
-int postfix_opstack[50]; // operand stack used for rearranging operators to get them in PEMDAS order.
+int postfix_opstack[50]; // a stack used for rearranging operators to get them in PEMDAS order.
 long numberStack_FINAL[26]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
 
 //count of how many open parenthesis are in the expression
@@ -40,19 +40,13 @@ void serialdataPull() {
     byteChar = char(incomingByte);
     byteChar != 'g' ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
     infX += 1;
-    
-    graphproc();
-    //anything below this only happens once after graph proc returns (after pressing G and fully processing our postfix calculations)
-    Serial.println("Recieved infix string data : " + String(infixstring));
-    
-    for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(int)); i++) {
-      Serial.print(String(infix_stack_reference[i]));
-    } Serial.println("");
-  
+    //=============== INFIXPARSER ========
+    infixproc();
+    //====================================
   } //end of if serial available
 } // end of serial data pull
 
-void graphproc() {
+void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but arduino for some absurd reason, does not have C++ STDL so I had to manually code it in
   if (byteChar == 'g') {
     unsigned int start = 0;
     unsigned int cutHere = 0;
@@ -62,7 +56,7 @@ void graphproc() {
       char procChar = char(infixstring[i]);
       switch (procChar) {
         case '0' ... '9':
-          infixRAWnumberStack[num_x] = procChar;
+          infixRAWnumberStack[num_x] = procChar;  //  infix string of 345+96-22/7-999 will become rawnumberstack of 34596227999 and depending on the distance between the sequence of numbers to the nearest operator, we can delimit and "cut" each number out of this raw stack like a stencil. 
           num_x += 1;
           break;
         case '(':
@@ -73,17 +67,17 @@ void graphproc() {
         case ')':
           Serial.println("num_x : " + String(num_x) + " | " + "parenthcount : " + String(openparenth_count) + " | " + "cutHere : " + String(cutHere) + " | ");
           openparenth_count -= 1;
+          infix_stack_reference[infix_key_x] = 7;
+          infix_key_x++;
           if ( cutHere != num_x ) {
             cutHere = num_x;
             Serial.println("DEBUG: save num INVOKED BY CLOSING PARENTHESIS");
             save_num(start, cutHere, num_indx);
             num_indx++;
           }
-          infix_stack_reference[infix_key_x] = 7;
-          infix_key_x++;
           if (openparenth_count == 0) {
-            Serial.println("PARENTH COUNT IS 0 WTF IS HAPPENING");
-            syntax_check(i);
+            Serial.println("PARENTH COUNT IS 0");
+            syntax_check(i); //=================================================== as a terrible design choice, this whole program continues by calling the syntax check soubroutine
           }
           break;
         case '-':
@@ -93,7 +87,6 @@ void graphproc() {
             abort();
           } else {
             cutHere = num_x;
-            Serial.println("DEBUG: save num INVOKED BY SUBRACTOR OPERATOR");
             save_num(start, cutHere, num_indx);
             num_indx++;
             infix_stack_reference[infix_key_x] = 2;
@@ -108,7 +101,6 @@ void graphproc() {
             abort();
           } else {
             cutHere = num_x;
-            Serial.println("DEBUG: save num INVOKED BY ADDITION OPERATOR");
             save_num(start, cutHere, num_indx);
             num_indx++;
             infix_stack_reference[infix_key_x] = 3;
@@ -122,12 +114,7 @@ void graphproc() {
             Serial.println("aborting.......");
             abort();
           } else {
-            /*COMPARE THE NUMX VALUE WHEN CALLED TWICE,
-              IT STAYS THE SAME SO ADD A CHECKING CODE BLOCK FOR EACH OPERATOR CASE
-              SO IF THE NUMX DOESNT CHANGE WHEN ANOTHER OPERATOR IS CALLED, (THERE WASNT A NUMBER INBETWEEN) IT HAS TO MEAN A DOUBLE OPERATOR ERROR
-              BY THE USER                                 ALREADY ADDED 9:14 AM 2/27/17*/
             cutHere = num_x;
-            Serial.println("DEBUG: save num INVOKED BY MULTIPLICATION OPERATOR");
             save_num(start, cutHere, num_indx);
             num_indx++;
             infix_stack_reference[infix_key_x] = 4;
@@ -142,7 +129,6 @@ void graphproc() {
             abort();
           } else {
             cutHere = num_x;
-            Serial.println("DEBUG: save num INVOKED BY DIVISION OPERATOR");
             save_num(start, cutHere, num_indx);
             // save num also performs infix_key_x++  - just a tip and dont forget that
             //calling this function and successfully saving a number adds 1(meaning a number) to the reference stack but also ++ to the X location of that stack.
@@ -153,10 +139,16 @@ void graphproc() {
             start = cutHere;
           }
           break;
-      }
-    }
-  }
-}
+      } // end of switch case
+    } // end of for loop
+    Serial.println("Recieved infix string: " + String(infixstring));
+    
+    for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(int)); i++) {
+      Serial.print(String(infix_stack_reference[i]));
+    } Serial.println("");
+  
+  } //end of if character g
+} //end of infixproc
 
 void save_num(int start, int cutpoint, int index_xpos) {
   infix_stack_reference[infix_key_x] = 1;
