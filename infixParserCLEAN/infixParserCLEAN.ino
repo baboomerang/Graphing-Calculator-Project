@@ -78,52 +78,52 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           }
           break;
         case '-':
-          if (cutHere == num_x) {
-            Serial.println("doubleoperatorerror");
-            Serial.println("aborting.......");
-            abort();
-          } else {
+//           if (cutHere == num_x) {
+//             Serial.println("doubleoperatorerror");
+//             Serial.println("aborting.......");
+//             abort();
+//           } else {
             cutHere = num_x;
             save_num(start, cutHere, num_indx);
             save_op(2);
             start = cutHere;
-          }
+//           }
           break;
         case '+':
-          if (cutHere == num_x) {
-            Serial.println("doubleoperatorerror");
-            Serial.println("aborting.......");
-            abort();
-          } else {
+//           if (cutHere == num_x) {
+//             Serial.println("doubleoperatorerror");
+//             Serial.println("aborting.......");
+//             abort();
+//           } else {
             cutHere = num_x;
             save_num(start, cutHere, num_indx);
             save_op(3);
             start = cutHere;
-          }
+//           }
           break;
         case '*':
-          if (cutHere == num_x) {
-            Serial.println("doubleoperatorerror");
-            Serial.println("aborting.......");
-            abort();
-          } else {
+//           if (cutHere == num_x) {
+//             Serial.println("doubleoperatorerror");
+//             Serial.println("aborting.......");
+//             abort();
+//           } else {
             cutHere = num_x;
             save_num(start, cutHere, num_indx);
             save_op(4);
             start = cutHere;
-          }
+//           }
           break;
         case '/':
-          if (cutHere == num_x) {
-            Serial.println("doubleoperatorerror");
-            Serial.println("aborting.......");
-            abort();
-          } else {
+//           if (cutHere == num_x) {
+//             Serial.println("doubleoperatorerror");
+//             Serial.println("aborting.......");
+//             abort();
+//           } else {
             cutHere = num_x;
             save_num(start, cutHere, num_indx);
             save_op(5);
             start = cutHere;
-          }
+//           }
           break;
       } // end of switch case
     } // end of for loop
