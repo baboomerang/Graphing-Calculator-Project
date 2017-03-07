@@ -282,17 +282,14 @@ void pushtostack(byte precedence, int opr8tr) {
     else if ((opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
       postfix_opstack[ p + 1 ] = opr8tr;
       break;
-    }
-    else if (precedence == 255 && opr8tr == 6) {
-      //      postfix_opstack[p] = opr8tr;
     } else if (precedence == 255 && opr8tr == 7) {
-      //      for (int z = p ; z != 6 ; z--) {
-      //        int pop_operator = postfix_opstack[z];
-      //        if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
-      //          copy(numberrepeat, pop_operator);
-      //        }
-      //      }//end of for
-
+           for (int z = p ; postfix_opstack[z] != 6 ; z--) {
+             int pop_operator = postfix_opstack[z];
+             if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
+               copy(numberrepeat, pop_operator);
+             }
+           }//end of for
+    break;
     }
   }
 }
