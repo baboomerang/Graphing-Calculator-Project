@@ -256,11 +256,11 @@ void pushtostack(byte precedence, int opr8tr) {
     Serial.print(String(postfix_opstack[i]));
   }
   Serial.println("");
-  delay(100);
+  delay(25);
   Serial.println("precedence: " + String(precedence) + " operator value: " + String(opr8tr));
   //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
   for ( int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-    delay(100);
+
     if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
       postfix_opstack[p] = opr8tr;
       //      Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
@@ -275,21 +275,32 @@ void pushtostack(byte precedence, int opr8tr) {
       copy(numberrepeat, selected_oper8tr_in_opstack);
       postfix_opstack[p] = opr8tr;
       for ( int loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(int)); loc ++ ) postfix_opstack[loc] = 0;
-    } else if ((opr8tr > postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
+    } else if ((opr8tr != 7 && opr8tr > postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
       postfix_opstack[ p + 1 ] = opr8tr;
       break;
     }
-    else if ((opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
+    else if ((opr8tr != 7 && opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
       postfix_opstack[ p + 1 ] = opr8tr;
       break;
     } else if (precedence == 255 && opr8tr == 7) {
-           for (int z = p ; postfix_opstack[z] != 6 ; z--) {
-             int pop_operator = postfix_opstack[z];
-             if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
-               copy(numberrepeat, pop_operator);
-             }
-           }//end of for
-    break;
+      delay(50);
+      Serial.println("we have for pp: " + String(p) + "   " + "for postfix_opstack[pp], we have : " + String(postfix_opstack[p]));
+      if (postfix_opstack[p] != 0) {
+        int operator_2b_popped = postfix_opstack[p];
+        postfix_opstack[p] = 0;
+        if (operator_2b_popped != 6) {
+          copy(numberrepeat, operator_2b_popped);
+        } else break;
+      }
+      //      for (int pp = p ; postfix_opstack[pp] != 6 ; pp--) {
+      //        int pop_operator = postfix_opstack[pp];
+      //        Serial.println("What we have for pop_operator : " + String(pop_operator));
+      //        if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
+      //          copy(numberrepeat, pop_operator);
+      //        } else {
+      //          break;
+      //        }
+      //      }//end of for
     }
   }
 }
