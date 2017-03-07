@@ -61,19 +61,16 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           break;
         case '(':
           openparenth_count += 1;
-          infix_stack_reference[infix_key_x] = 6;
-          infix_key_x++;
+          save_op(6);
           break;
         case ')':
           Serial.println("num_x : " + String(num_x) + " | " + "parenthcount : " + String(openparenth_count) + " | " + "cutHere : " + String(cutHere) + " | ");
           openparenth_count -= 1;
-          infix_stack_reference[infix_key_x] = 7;
-          infix_key_x++;
+          save_op(7);
           if ( cutHere != num_x ) {
             cutHere = num_x;
             Serial.println("DEBUG: save num INVOKED BY CLOSING PARENTHESIS");
             save_num(start, cutHere, num_indx);
-            num_indx++;
           }
           if (openparenth_count == 0) {
             Serial.println("PARENTH COUNT IS 0");
@@ -88,9 +85,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           } else {
             cutHere = num_x;
             save_num(start, cutHere, num_indx);
-            num_indx++;
-            infix_stack_reference[infix_key_x] = 2;
-            infix_key_x++;
+            save_op(2);
             start = cutHere;
           }
           break;
@@ -102,9 +97,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           } else {
             cutHere = num_x;
             save_num(start, cutHere, num_indx);
-            num_indx++;
-            infix_stack_reference[infix_key_x] = 3;
-            infix_key_x++;
+            save_op(3);
             start = cutHere;
           }
           break;
@@ -116,9 +109,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           } else {
             cutHere = num_x;
             save_num(start, cutHere, num_indx);
-            num_indx++;
-            infix_stack_reference[infix_key_x] = 4;
-            infix_key_x++;
+            save_op(4);
             start = cutHere;
           }
           break;
@@ -130,12 +121,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           } else {
             cutHere = num_x;
             save_num(start, cutHere, num_indx);
-            // save num also performs infix_key_x++  - just a tip and dont forget that
-            //calling this function and successfully saving a number adds 1(meaning a number) to the reference stack but also ++ to the X location of that stack.
-            //that x location variable is named infix_key_x and thus doesnt really complicate anything. Infact it just makes it more confusing because the infix_key_x is modified in different nested functions.
-            num_indx++;
-            infix_stack_reference[infix_key_x] = 5;
-            infix_key_x++;
+            save_op(5);
             start = cutHere;
           }
           break;
@@ -151,15 +137,29 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
 } //end of infixproc
 
 void save_num(int start, int cutpoint, int index_xpos) {
-  infix_stack_reference[infix_key_x] = 1;
-  infix_key_x++;
+  save_op(1);
   String Z = String(infixRAWnumberStack);
   String Zshort = Z.substring(start, cutpoint);
   //the cutpoint does not include the value at the cutpoint. its an exclusion limit. if we had 35456 and cut point was 4 with start 0, we would just get the first 3
   long i = Zshort.toInt();
   numberStack_FINAL[index_xpos] = i;
+  num_indx++;
   //numberStack_FINAL IS WHERE ALL THE FULL NUMBERS ARE STORED.  numberStack_FINAL[x] = "23223" numberStack_FINAL[x+1] = "3567" .... etc
   Serial.println("OUTPUT: we have this for Z / infixRAWnumberStack simplified " + String(Z) + "    OUTPUT: we have this for individual i.shortstring saved " + String(i));
+}
+
+void save_op(int reference_type) {
+  /* 1 = number
+     2 = subtraction
+     3 = addition
+     4 = multiplication
+     5 = division
+     6 = right facing parenthesis (
+     7 = left facing parenthesis )
+     8 = ... ?
+     9? */
+  infix_stack_reference[infix_key_x] = reference_type;
+  infix_key_x++;
 }
 
 void syntax_check(int end_of_string) {
