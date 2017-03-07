@@ -1,66 +1,65 @@
-byte buttonprocessed = 0;
+//input / cin variables
 char byteChar;
 
-unsigned int num_x = 0;
-
-char infixRAWnumberStack[100];
-char infixstring[1000];
-//char postfixstring[1000];
-
+//Cin input X location of infix expression (infX) printing from left to right 
 unsigned int infX = 0;
-
-//bool graph = LOW;
-
-long numberStack_FINAL[26];
-
-char procChar;
+// saved number array position in order ie. numberStack_FINAL[3] = "2323212" where num_indx = 3
 unsigned int num_indx = 0;
+// number delimiter based by operator dependency
+unsigned int num_x = 0;
+//infix reference stack X location
+unsigned int infix_key_x = 0;
+//postfix reference X location
+unsigned int numberrepeat = 0;
+
+//infixnumberstack and the Cin String
+char infixRAWnumberStack[100];  //string of all the numbers together.
+char infixstring[1000];
+//processed stacks of information
+int infix_stack_reference[50]; // reference key showing INFIX notation of the expression in a simplified view
+int postfix_stack_reference[50]; // reference key showing POSTFIX notation of the expression in a simplified view
+int postfix_opstack[50]; // operand stack used for rearranging operators to get them in PEMDAS order.
+long numberStack_FINAL[26]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+
+//count of how many open parenthesis are in the expression
 unsigned int openparenth_count = 0;
 
-unsigned int infix_key_x = 0;
-
-int infix_stack_reference[50];
-int postfix_opstack[50];
-
-int postfix_stack_reference[50];
-unsigned int numberrepeat = 0;
-unsigned int location = 0;
-
 void setup() {
-  // put your setup code here, to run once:
   infixstring[0] = '(';
   infX = 1;
   Serial.begin(9600);
 }
-
+//the whole code is nested under serialdataPull();
 void loop() {
-  // put your main code here, to run repeatedly:
   serialdataPull();
 }
 
 void serialdataPull() {
-  if (Serial.available() > 0) {
+  if (Serial.available() > 0) { //make sure serial is open Cin
     int incomingByte = Serial.read();
-    buttonprocessed = 1;
     byteChar = char(incomingByte);
     byteChar != 'g' ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
     infX += 1;
+    
     graphproc();
-    Serial.println("pre - G - infix string: " + String(infixstring));
+    //anything below this only happens once after graph proc returns (after pressing G and fully processing our postfix calculations)
+    Serial.println("Recieved infix string data : " + String(infixstring));
+    
     for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(int)); i++) {
       Serial.print(String(infix_stack_reference[i]));
     } Serial.println("");
-  }
-  //    Serial.println("post G infix string: " + String(infix_stack_reference));
-}
+  
+  } //end of if serial available
+} // end of serial data pull
 
 void graphproc() {
   if (byteChar == 'g') {
-    infixstring[strlen(infixstring)] = ')';
     unsigned int start = 0;
     unsigned int cutHere = 0;
-    for (byte i = 0; i < strlen(infixstring); i++) {
-      procChar = char(infixstring[i]);
+    infixstring[strlen(infixstring)] = ')';
+    //once we press g, it will start to process the string entirely. thanks for the tip angad!
+    for (byte i = 0; i < strlen(infixstring); i++) { //from the starting point of the infix string until the end of the string.....
+      char procChar = char(infixstring[i]);
       switch (procChar) {
         case '0' ... '9':
           infixRAWnumberStack[num_x] = procChar;
@@ -68,9 +67,6 @@ void graphproc() {
           break;
         case '(':
           openparenth_count += 1;
-          //            cutHere = num_x;
-          //            save_num(start, cutHere, num_indx);
-          //            num_indx++;
           infix_stack_reference[infix_key_x] = 6;
           infix_key_x++;
           break;
@@ -89,11 +85,6 @@ void graphproc() {
             Serial.println("PARENTH COUNT IS 0 WTF IS HAPPENING");
             syntax_check(i);
           }
-          //              save_num(start, cutHere, num_indx);
-          //          } else Serial.println("PARENTH IS A NUMBER : " + String(openparenth_count));
-          //          openparenth_count == 0 ? save_num(start, cutHere, num_indx) : int z = null; //consider editing this abort() in the futre, why should we abort if we have additional parenthesis? assuming correct syntax?
-          //test_index(); // DONT TAKE THIS OFF LOL
-          //            syntax_check(i);
           break;
         case '-':
           if (cutHere == num_x) {
@@ -108,7 +99,6 @@ void graphproc() {
             infix_stack_reference[infix_key_x] = 2;
             infix_key_x++;
             start = cutHere;
-            //            syntax_check(i);
           }
           break;
         case '+':
@@ -124,7 +114,6 @@ void graphproc() {
             infix_stack_reference[infix_key_x] = 3;
             infix_key_x++;
             start = cutHere;
-            //            syntax_check(i);
           }
           break;
         case '*':
@@ -144,7 +133,6 @@ void graphproc() {
             infix_stack_reference[infix_key_x] = 4;
             infix_key_x++;
             start = cutHere;
-            //            syntax_check(i);
           }
           break;
         case '/':
@@ -163,24 +151,12 @@ void graphproc() {
             infix_stack_reference[infix_key_x] = 5;
             infix_key_x++;
             start = cutHere;
-            //            syntax_check(i);
           }
           break;
       }
     }
   }
 }
-
-//void test_index() {
-//  for (int lol = 0; lol < (sizeof(numberStack_FINAL) / sizeof(long)); lol++) {
-//    Serial.println(" So this is what we have for input index in " + String(lol) + " NUMBER:   " + String(numberStack_FINAL[lol]) );
-//    if (numberStack_FINAL[lol] == 0) break;
-//  }
-//  for (int lol = 0; lol < ((sizeof(infix_stack_reference)) / sizeof(int)); lol++) {
-//    Serial.println(" ~~~~~?@#!#!@$?!@$!@$!@#>!@3?!>@#   CALC PROC POSITION " + String(lol) + " TYPE STATUS:   " + String(infix_stack_reference[lol]) );
-//    if (infix_stack_reference[lol] == 0) break;
-//  }
-//}
 
 void save_num(int start, int cutpoint, int index_xpos) {
   infix_stack_reference[infix_key_x] = 1;
@@ -195,12 +171,6 @@ void save_num(int start, int cutpoint, int index_xpos) {
 }
 
 void syntax_check(int end_of_string) {
-  //  if (infix_stack_reference[infix_key_x] == infix_stack_reference[infix_key_x - 1] ) {
-  //    Serial.println("MAJOR SYNTAX COMPLICATION, YOU HAVE A DOUBLE OPERATOR SOMEWHERE");
-  //    //here you would write some abort code, or tell the user that the code has an extra operator
-  //    abort(); NOT NECESSARY HERE, THIS IS NOT THE OPTIMAL PLACE TO CODE. ALREADY IMPLEMENTED DURING PROCCHAR INDEXING. DEBUNKED
-  //  }
-  Serial.println("so we have end of string " + String(end_of_string));
   if (end_of_string == (strlen(infixstring) - 1)) {
     openparenth_count != 0 ? abort() : calculate_postfix();
     Serial.println("so we didnt abort either? NICE");
@@ -292,15 +262,6 @@ void pushtostack(byte precedence, int opr8tr) {
           copy(numberrepeat, operator_2b_popped);
         } else break;
       }
-      //      for (int pp = p ; postfix_opstack[pp] != 6 ; pp--) {
-      //        int pop_operator = postfix_opstack[pp];
-      //        Serial.println("What we have for pop_operator : " + String(pop_operator));
-      //        if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
-      //          copy(numberrepeat, pop_operator);
-      //        } else {
-      //          break;
-      //        }
-      //      }//end of for
     }
   }
 }
