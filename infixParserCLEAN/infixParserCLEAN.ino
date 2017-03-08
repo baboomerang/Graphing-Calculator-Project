@@ -23,6 +23,8 @@ long numberStack_FINAL[26]; // where operands are stored by index nmbrstack_FINA
 
 //count of how many open parenthesis are in the expression
 unsigned int openparenth_count = 0;
+//this is an immediate
+bool active_parenth = false;
 
 void setup() {
   infixstring[0] = '(';
@@ -32,6 +34,10 @@ void setup() {
 //the whole code is nested under serialdataPull();
 void loop() {
   serialdataPull();
+}
+
+void doNothing() {
+  active_parenth = false;
 }
 
 void serialdataPull() {
@@ -66,6 +72,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
         case ')':
           Serial.println("num_x : " + String(num_x) + " | " + "parenthcount : " + String(openparenth_count) + " | " + "cutHere : " + String(cutHere) + " | ");
           openparenth_count -= 1;
+          active_parenth = true;
           if ( cutHere != num_x ) {
             cutHere = num_x;
             Serial.println("DEBUG: save num INVOKED BY CLOSING PARENTHESIS");
@@ -78,52 +85,53 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           }
           break;
         case '-':
-//           if (cutHere == num_x) {
-//             Serial.println("doubleoperatorerror");
-//             Serial.println("aborting.......");
-//             abort();
-//           } else {
-            cutHere = num_x;
-            save_num(start, cutHere, num_indx);
-            save_op(2);
-            start = cutHere;
-//           }
+          //           if (cutHere == num_x) {
+          //             Serial.println("doubleoperatorerror");
+          //             Serial.println("aborting.......");
+          //             abort();
+          //           } else {
+          cutHere = num_x;
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          save_op(2);
+          start = cutHere;
+          //           }
           break;
         case '+':
-//           if (cutHere == num_x) {
-//             Serial.println("doubleoperatorerror");
-//             Serial.println("aborting.......");
-//             abort();
-//           } else {
-            cutHere = num_x;
-            save_num(start, cutHere, num_indx);
-            save_op(3);
-            start = cutHere;
-//           }
+          //           if (cutHere == num_x) {
+          //             Serial.println("doubleoperatorerror");
+          //             Serial.println("aborting.......");
+          //             abort();
+          //           } else {
+          cutHere = num_x;
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          save_op(3);
+          start = cutHere;
+          //           }
           break;
         case '*':
-//           if (cutHere == num_x) {
-//             Serial.println("doubleoperatorerror");
-//             Serial.println("aborting.......");
-//             abort();
-//           } else {
-            cutHere = num_x;
-            save_num(start, cutHere, num_indx);
-            save_op(4);
-            start = cutHere;
-//           }
+          //           if (cutHere == num_x) {
+          //             Serial.println("doubleoperatorerror");
+          //             Serial.println("aborting.......");
+          //             abort();
+          //           } else {
+          cutHere = num_x;
+          Serial.println("SAVENUMINVOKED BY MULTIPLICATION");
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          save_op(4);
+          start = cutHere;
+          //           }
           break;
         case '/':
-//           if (cutHere == num_x) {
-//             Serial.println("doubleoperatorerror");
-//             Serial.println("aborting.......");
-//             abort();
-//           } else {
-            cutHere = num_x;
-            save_num(start, cutHere, num_indx);
-            save_op(5);
-            start = cutHere;
-//           }
+          //           if (cutHere == num_x) {
+          //             Serial.println("doubleoperatorerror");
+          //             Serial.println("aborting.......");
+          //             abort();
+          //           } else {
+          cutHere = num_x;
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          save_op(5);
+          start = cutHere;
+          //           }
           break;
       } // end of switch case
     } // end of for loop
@@ -180,14 +188,14 @@ void calculate_postfix() {
         so by piggybacking on that predictable ending, we can tie together
         a final check to see if its actually the end of the string*/
       if ( infix_stack_reference[infix_key_x + 1] == 0 ) { // WARNING!!!!!!!!!!!!!!!!! this code might potentially be problematic if we have infix expressions that end in parenthesis.
-        //======== Operator Stack Popping Code
-        for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-          int opr8tr = postfix_opstack[p];
-          if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
-            copy(numberrepeat, opr8tr);
-          }
-        }
-        //=====================
+        //        //======== Operator Stack Popping Code
+        //        for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
+        //          int opr8tr = postfix_opstack[p];
+        //          if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
+        //            copy(numberrepeat, opr8tr);
+        //          }
+        //        }
+        //        //=====================
       }
     } // end of if i == 1 so anything below this checkes for other types of reference numbers. *ie operators or modifier characters.
     if ( i == 2 || i == 3 ) {
@@ -210,6 +218,11 @@ void copy(byte location, byte input ) {
 }
 
 void pushtostack(byte precedence, int opr8tr) {
+  delay(50);
+  for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
+    Serial.print(String(postfix_opstack[i]));
+  } Serial.println("");
+  delay(50);
   Serial.println("precedence: " + String(precedence) + " operator value: " + String(opr8tr));
   //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
   for ( int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
@@ -237,7 +250,7 @@ void pushtostack(byte precedence, int opr8tr) {
       break;
     } else if (precedence == 255 && opr8tr == 7) {
       if (postfix_opstack[p] != 0) {
-        Serial.println("we have for pp: " + String(p) + "   " + "for postfix_opstack[pp], we have : " + String(postfix_opstack[p]));
+        Serial.println("we have for p: " + String(p) + "   " + "for postfix_opstack[pp], we have : " + String(postfix_opstack[p]));
         int operator_2b_popped = postfix_opstack[p];
         postfix_opstack[p] = 0;
         if (operator_2b_popped != 6) {
