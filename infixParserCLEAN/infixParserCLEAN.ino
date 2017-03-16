@@ -96,7 +96,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           start = cutHere;
           //           }
           break;
-         case '-':
+        case '-':
           //           if (cutHere == num_x) {
           //             Serial.println("doubleoperatorerror");
           //             Serial.println("aborting.......");
@@ -220,12 +220,12 @@ void calculate_postfix() {
       pushtostack(255, i);
     } else if ( i == 8) {
       pushtostack(4, i);
-  } // prints the postfix stack reference when we reach end of string.
+    } // prints the postfix stack reference when we reach end of string.
+  }
   for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
     Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
   }
 }
-
 void copy(byte location, byte input ) {
   postfix_stack_reference[location] = input;
   numberrepeat++;
@@ -268,6 +268,8 @@ void pushtostack(byte precedence, int opr8tr) {
         int operator_2b_popped = postfix_opstack[p];
         postfix_opstack[p] = 0;
         if (operator_2b_popped != 6) {
+          delay(1000);
+          Serial.println("==============================================" + String(operator_2b_popped));
           copy(numberrepeat, operator_2b_popped);
         } else break;
       }

@@ -279,70 +279,70 @@ void graphproc() {
           syntax_check(i);
           break;
         case '-':
-          if(cutHere == num_x) {
+          if (cutHere == num_x) {
             Serial.println("doubleoperatorerror");
             Serial.println("aborting.......");
             abort();
           } else {
-          cutHere = num_x;
-          save_num(start, cutHere, num_indx);
-          num_indx++;
-          infix_stack_reference[infix_key_x] = 2;
-          infix_key_x++;
-          start = cutHere;
-          syntax_check(i);
+            cutHere = num_x;
+            save_num(start, cutHere, num_indx);
+            num_indx++;
+            infix_stack_reference[infix_key_x] = 2;
+            infix_key_x++;
+            start = cutHere;
+            syntax_check(i);
           }
           break;
         case '+':
-          if(cutHere == num_x) {
+          if (cutHere == num_x) {
             Serial.println("doubleoperatorerror");
             Serial.println("aborting.......");
             abort();
           } else {
-          cutHere = num_x;
-          save_num(start, cutHere, num_indx);
-          num_indx++;
-          infix_stack_reference[infix_key_x] = 3;
-          infix_key_x++;
-          start = cutHere;
-          syntax_check(i);
+            cutHere = num_x;
+            save_num(start, cutHere, num_indx);
+            num_indx++;
+            infix_stack_reference[infix_key_x] = 3;
+            infix_key_x++;
+            start = cutHere;
+            syntax_check(i);
           }
           break;
         case '*':
-          if(cutHere == num_x) {
+          if (cutHere == num_x) {
             Serial.println("doubleoperatorerror");
             Serial.println("aborting.......");
             abort();
           } else {
-          /*COMPARE THE NUMX VALUE WHEN CALLED TWICE,
-            IT STAYS THE SAME SO ADD A CHECKING CODE BLOCK FOR EACH OPERATOR CASE
-            SO IF THE NUMX DOESNT CHANGE WHEN ANOTHER OPERATOR IS CALLED, (THERE WASNT A NUMBER INBETWEEN) IT HAS TO MEAN A DOUBLE OPERATOR ERROR
-            BY THE USER                                 ALREADY ADDED 9:14 AM 2/27/17*/
-          cutHere = num_x;
-          save_num(start, cutHere, num_indx);
-          num_indx++;
-          infix_stack_reference[infix_key_x] = 4;
-          infix_key_x++;
-          start = cutHere;
-          syntax_check(i);
+            /*COMPARE THE NUMX VALUE WHEN CALLED TWICE,
+              IT STAYS THE SAME SO ADD A CHECKING CODE BLOCK FOR EACH OPERATOR CASE
+              SO IF THE NUMX DOESNT CHANGE WHEN ANOTHER OPERATOR IS CALLED, (THERE WASNT A NUMBER INBETWEEN) IT HAS TO MEAN A DOUBLE OPERATOR ERROR
+              BY THE USER                                 ALREADY ADDED 9:14 AM 2/27/17*/
+            cutHere = num_x;
+            save_num(start, cutHere, num_indx);
+            num_indx++;
+            infix_stack_reference[infix_key_x] = 4;
+            infix_key_x++;
+            start = cutHere;
+            syntax_check(i);
           }
           break;
         case '/':
-          if(cutHere == num_x) {
+          if (cutHere == num_x) {
             Serial.println("doubleoperatorerror");
             Serial.println("aborting.......");
             abort();
           } else {
-          cutHere = num_x;
-          save_num(start, cutHere, num_indx);
-          // save num also performs infix_key_x++  - just a tip and dont forget that
-          //calling this function and successfully saving a number adds 1(meaning a number) to the reference stack but also ++ to the X location of that stack.
-          //that x location variable is named infix_key_x and thus doesnt really complicate anything. Infact it just makes it more confusing because the infix_key_x is modified in different nested functions.
-          num_indx++;
-          infix_stack_reference[infix_key_x] = 5;
-          infix_key_x++;
-          start = cutHere;
-          syntax_check(i);
+            cutHere = num_x;
+            save_num(start, cutHere, num_indx);
+            // save num also performs infix_key_x++  - just a tip and dont forget that
+            //calling this function and successfully saving a number adds 1(meaning a number) to the reference stack but also ++ to the X location of that stack.
+            //that x location variable is named infix_key_x and thus doesnt really complicate anything. Infact it just makes it more confusing because the infix_key_x is modified in different nested functions.
+            num_indx++;
+            infix_stack_reference[infix_key_x] = 5;
+            infix_key_x++;
+            start = cutHere;
+            syntax_check(i);
           }
           break;
       }
@@ -394,11 +394,11 @@ void calculate_postfix() {
     if ( i == 1 ) {
       copy(numberrepeat, 1);
       numberrepeat++;
-      /* we know that the infix notation expression will always end with a 1, 
-      so by piggybacking on that predictable ending, we can tie together 
-      a final check to see if its actually the end of the string*/
+      /* we know that the infix notation expression will always end with a 1,
+        so by piggybacking on that predictable ending, we can tie together
+        a final check to see if its actually the end of the string*/
       if ( infix_stack_reference[infix_key_x + 1] == 0 ) { // WARNING!!!!!!!!!!!!!!!!! this code might potentially be problematic if we have infix expressions that end in parenthesis.
-//======== Operator Stack Popping Code
+        //======== Operator Stack Popping Code
         for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
           int opr8tr = postfix_opstack[p];
           if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
@@ -406,7 +406,7 @@ void calculate_postfix() {
             numberrepeat++;
           }
         }
-      //=====================
+        //=====================
       }
     } // end of if i == 1 so anything below this checkes for other types of reference numbers. *ie operators or modifier characters.
     if ( i == 2 || i == 3 ) {
@@ -415,136 +415,136 @@ void calculate_postfix() {
       pushtostack(3, i);
     } else if ( i == 6 ) {
       pushtostack(6, i);
-  }
-  for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-    Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
-  }
-}
-
-void copy(byte location, byte input ) {
-  postfix_stack_reference[location] = input;
-}
-
-void pushtostack(byte precedence, int opr8tr) {
-  //  Serial.println("precedence: " + String(precedence) + " operator value: " + String(opr8tr));
-  //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
-  for ( int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-    if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
-      postfix_opstack[p] = opr8tr;
-      //      Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
-     //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '            
-    } else if ((opr8tr!=6 && precedence!=6) && (opr8tr < postfix_opstack[p]) || (opr8tr == postfix_opstack[p] || (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
-      int prev_opr8tr = postfix_opstack[p];
-      copy(numberrepeat, prev_opr8tr);
-      numberrepeat++;
-      postfix_opstack[p] = opr8tr;
-      for ( int loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(int)); loc ++ ) postfix_opstack[loc] = 0;
-    } else if (opr8tr > postfix_opstack[p] && postfix_opstack[p] != 0)  {
-      postfix_opstack[ p + 1 ] = opr8tr;
-      break;
+    }
+    for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
+      Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
     }
   }
 }
-
-void evaluate_postfix(int p) {
-  for ( int p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p++ ) {
-    int number_index;
-    int value = postfix_stack_reference[p];
-    value == 1 ? number_index++ : number_index == number_index;
-    //    value > 1 ? placeholder(DELETE THIS IT WONT COMPILE) : EXCEPTION();
+  void copy(byte location, byte input ) {
+    postfix_stack_reference[location] = input;
   }
-}
 
-void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double w, double h, double xlo, double xhi, double xinc, double ylo, double yhi, double yinc, String title, String xlabel, String ylabel, unsigned int gcolor, unsigned int acolor, unsigned int pcolor, unsigned int tcolor, unsigned int bcolor, boolean & redraw) {
-
-  double ydiv, xdiv;
-  // initialize old x and old y in order to draw the first point of the graph
-  // but save the transformed value
-  // note my transform funcition is the same as the map function, except the map uses long and we need doubles
-  //static double ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
-  //static double oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-  double i;
-  double temp;
-  int rot, newrot;
-
-  if (redraw == true) {
-
-    redraw = false;
-    ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
-    oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-    // draw y scale
-    for ( i = ylo; i <= yhi; i += yinc) {
-      // compute the transform
-      temp =  (i - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-
-      if (i == 0) {
-        d.drawLine(gx, temp, gx + w, temp, acolor);
+  void pushtostack(byte precedence, int opr8tr) {
+    //  Serial.println("precedence: " + String(precedence) + " operator value: " + String(opr8tr));
+    //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
+    for ( int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
+      if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
+        postfix_opstack[p] = opr8tr;
+        //      Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
+        //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '
+      } else if ((opr8tr != 6 && precedence != 6) && (opr8tr < postfix_opstack[p]) || (opr8tr == postfix_opstack[p] || (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
+        int prev_opr8tr = postfix_opstack[p];
+        copy(numberrepeat, prev_opr8tr);
+        numberrepeat++;
+        postfix_opstack[p] = opr8tr;
+        for ( int loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(int)); loc ++ ) postfix_opstack[loc] = 0;
+      } else if (opr8tr > postfix_opstack[p] && postfix_opstack[p] != 0)  {
+        postfix_opstack[ p + 1 ] = opr8tr;
+        break;
       }
-      else {
-        d.drawLine(gx, temp, gx + w, temp, gcolor);
+    }
+  }
+
+  void evaluate_postfix(int p) {
+    for ( int p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p++ ) {
+      int number_index;
+      int value = postfix_stack_reference[p];
+      value == 1 ? number_index++ : number_index == number_index;
+      //    value > 1 ? placeholder(DELETE THIS IT WONT COMPILE) : EXCEPTION();
+    }
+  }
+
+  void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double w, double h, double xlo, double xhi, double xinc, double ylo, double yhi, double yinc, String title, String xlabel, String ylabel, unsigned int gcolor, unsigned int acolor, unsigned int pcolor, unsigned int tcolor, unsigned int bcolor, boolean & redraw) {
+
+    double ydiv, xdiv;
+    // initialize old x and old y in order to draw the first point of the graph
+    // but save the transformed value
+    // note my transform funcition is the same as the map function, except the map uses long and we need doubles
+    //static double ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
+    //static double oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
+    double i;
+    double temp;
+    int rot, newrot;
+
+    if (redraw == true) {
+
+      redraw = false;
+      ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
+      oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
+      // draw y scale
+      for ( i = ylo; i <= yhi; i += yinc) {
+        // compute the transform
+        temp =  (i - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
+
+        if (i == 0) {
+          d.drawLine(gx, temp, gx + w, temp, acolor);
+        }
+        else {
+          d.drawLine(gx, temp, gx + w, temp, gcolor);
+        }
+
+        d.setTextSize(1);
+        d.setTextColor(tcolor, bcolor);
+        d.setCursor(gx - 40, temp);
+        // precision is default Arduino--this could really use some format control
+        d.println(i);
       }
+      // draw x scale
+      for (i = xlo; i <= xhi; i += xinc) {
+
+        // compute the transform
+
+        temp =  (i - xlo) * ( w) / (xhi - xlo) + gx;
+        if (i == 0) {
+          d.drawLine(temp, gy, temp, gy - h, acolor);
+        }
+        else {
+          d.drawLine(temp, gy, temp, gy - h, gcolor);
+        }
+
+        d.setTextSize(1);
+        d.setTextColor(tcolor, bcolor);
+        d.setCursor(temp, gy + 10);
+        // precision is default Arduino--this could really use some format control
+        d.println(i);
+      }
+
+      //now draw the labels
+      d.setTextSize(2);
+      d.setTextColor(tcolor, bcolor);
+      d.setCursor(gx , gy - h - 30);
+      d.println(title);
 
       d.setTextSize(1);
-      d.setTextColor(tcolor, bcolor);
-      d.setCursor(gx - 40, temp);
-      // precision is default Arduino--this could really use some format control
-      d.println(i);
-    }
-    // draw x scale
-    for (i = xlo; i <= xhi; i += xinc) {
-
-      // compute the transform
-
-      temp =  (i - xlo) * ( w) / (xhi - xlo) + gx;
-      if (i == 0) {
-        d.drawLine(temp, gy, temp, gy - h, acolor);
-      }
-      else {
-        d.drawLine(temp, gy, temp, gy - h, gcolor);
-      }
+      d.setTextColor(acolor, bcolor);
+      d.setCursor(gx , gy + 20);
+      d.println(xlabel);
 
       d.setTextSize(1);
-      d.setTextColor(tcolor, bcolor);
-      d.setCursor(temp, gy + 10);
-      // precision is default Arduino--this could really use some format control
-      d.println(i);
+      d.setTextColor(acolor, bcolor);
+      d.setCursor(gx - 30, gy - h - 10);
+      d.println(ylabel);
+
+
     }
 
-    //now draw the labels
-    d.setTextSize(2);
-    d.setTextColor(tcolor, bcolor);
-    d.setCursor(gx , gy - h - 30);
-    d.println(title);
-
-    d.setTextSize(1);
-    d.setTextColor(acolor, bcolor);
-    d.setCursor(gx , gy + 20);
-    d.println(xlabel);
-
-    d.setTextSize(1);
-    d.setTextColor(acolor, bcolor);
-    d.setCursor(gx - 30, gy - h - 10);
-    d.println(ylabel);
-
+    //graph drawn now plot the data
+    // the entire plotting code are these few lines...
+    // recall that ox and oy are initialized as static above
+    x =  (x - xlo) * ( w) / (xhi - xlo) + gx;
+    y =  (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
+    d.drawLine(ox, oy, x, y, pcolor);
+    d.drawLine(ox, oy + 1, x, y + 1, pcolor);
+    d.drawLine(ox, oy - 1, x, y - 1, pcolor);
+    ox = x;
+    oy = y;
 
   }
 
-  //graph drawn now plot the data
-  // the entire plotting code are these few lines...
-  // recall that ox and oy are initialized as static above
-  x =  (x - xlo) * ( w) / (xhi - xlo) + gx;
-  y =  (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-  d.drawLine(ox, oy, x, y, pcolor);
-  d.drawLine(ox, oy + 1, x, y + 1, pcolor);
-  d.drawLine(ox, oy - 1, x, y - 1, pcolor);
-  ox = x;
-  oy = y;
-
-}
-
-/*
-  End of graphing functioin
-*/
+  /*
+    End of graphing functioin
+  */
 
 
 
