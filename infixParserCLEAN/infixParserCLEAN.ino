@@ -84,7 +84,19 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
             syntax_check(i); //=================================================== as a terrible design choice, this whole program continues by calling the syntax check soubroutine
           }
           break;
-        case '-':
+        case '^':
+          //           if (cutHere == num_x) {
+          //             Serial.println("doubleoperatorerror");
+          //             Serial.println("aborting.......");
+          //             abort();
+          //           } else {
+          cutHere = num_x;
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          save_op(8);
+          start = cutHere;
+          //           }
+          break;
+         case '-':
           //           if (cutHere == num_x) {
           //             Serial.println("doubleoperatorerror");
           //             Serial.println("aborting.......");
@@ -164,7 +176,7 @@ void save_op(int reference_type) {
      5 = division
      6 = right facing parenthesis (
      7 = left facing parenthesis )
-     8 = ... ?
+     8 = ... EXPONENT ?
      9? */
   infix_stack_reference[infix_key_x] = reference_type;
   infix_key_x++;
@@ -206,12 +218,14 @@ void calculate_postfix() {
       pushtostack(255, i);
     } else if ( i == 7) {
       pushtostack(255, i);
-    }
-  }
+    } else if ( i == 8) {
+      pushtostack(4, i);
+  } // prints the postfix stack reference when we reach end of string.
   for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
     Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
   }
 }
+
 void copy(byte location, byte input ) {
   postfix_stack_reference[location] = input;
   numberrepeat++;
@@ -231,7 +245,7 @@ void pushtostack(byte precedence, int opr8tr) {
       postfix_opstack[p] = opr8tr;
       //      Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
       //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '
-    } else if ((precedence != 255) && (opr8tr < postfix_opstack[p] && postfix_opstack[p] != 6) || ( (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
+    } else if ((precedence != 255 || precedence != 4) && (opr8tr < postfix_opstack[p] && postfix_opstack[p] != 6) || ( (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
       /* CODE EXPLANATION -
         So first, we initialize a local temp variable to store the value of the fualty operator
         then we copy that temp variable to the postfix reference stack (ie. "popping" the stack)
