@@ -245,7 +245,7 @@ void pushtostack(byte precedence, int opr8tr) {
       postfix_opstack[p] = opr8tr;
       //      Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
       //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '
-    } else if ((precedence != 255 || precedence != 4) && (opr8tr < postfix_opstack[p] && postfix_opstack[p] != 6) || ( (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
+    } else if ((precedence != 255) && (opr8tr < postfix_opstack[p] && postfix_opstack[p] != 6) || ( (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
       /* CODE EXPLANATION -
         So first, we initialize a local temp variable to store the value of the fualty operator
         then we copy that temp variable to the postfix reference stack (ie. "popping" the stack)
