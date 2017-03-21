@@ -255,11 +255,7 @@ void pushtostack(byte precedence, int opr8tr) {
       copy(numberrepeat, selected_oper8tr_in_opstack);
       postfix_opstack[p] = opr8tr;
       for ( int loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(int)); loc ++ ) postfix_opstack[loc] = 0;
-    } else if ((opr8tr != 7 && opr8tr > postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
-      postfix_opstack[ p + 1 ] = opr8tr;
-      break;
-    }
-    else if ((opr8tr != 7 && opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
+    } else if ((opr8tr != 7 && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
       postfix_opstack[ p + 1 ] = opr8tr;
       break;
     } else if (precedence == 255 && opr8tr == 7) {
