@@ -13,13 +13,17 @@ unsigned int infix_key_x = 0;
 unsigned int numberrepeat = 0;
 
 //infixnumberstack and the Cin String
-char infixRAWnumberStack[100];  //string of all the numbers together.
+char infixRAWnumberStack[1000];  //string of all the numbers together.
 char infixstring[1000];
 //processed stacks of information
-int infix_stack_reference[50]; // reference key showing INFIX notation of the expression in a simplified view
-int postfix_stack_reference[50]; // reference key showing POSTFIX notation of the expression in a simplified view
-int postfix_opstack[50]; // a stack used for rearranging operators to get them in PEMDAS order.
-long numberStack_FINAL[26]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+int infix_stack_reference[38]; // reference key showing INFIX notation of the expression in a simplified view
+int postfix_stack_reference[38]; // reference key showing POSTFIX notation of the expression in a simplified view
+int postfix_opstack[20]; // a stack used for rearranging operators to get them in PEMDAS order.
+long numberStack_FINAL[30]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+
+/* adjust the sizes of these stacks accordingly to your device,
+all these calculations are done rather quickly and well, but be mindful of the amount of operators
+and minimum needed operands required for the infix stack and postfix stack.*/
 
 //count of how many open parenthesis are in the expression
 unsigned int openparenth_count = 0;
@@ -254,10 +258,10 @@ void pushtostack(byte precedence, int opr8tr) {
       int selected_oper8tr_in_opstack = postfix_opstack[p];
       copy(numberrepeat, selected_oper8tr_in_opstack);
       postfix_opstack[p] = opr8tr;
-      for ( int loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(int)); loc ++ ) postfix_opstack[loc] = 0; 
-    } else if ((opr8tr != 7 && opr8tr > postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
-       postfix_opstack[ p + 1 ] = opr8tr;
-       break;
+      for ( int loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(int)); loc ++ ) postfix_opstack[loc] = 0;
+    } else if ((opr8tr != 7 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
+      postfix_opstack[ p + 1 ] = opr8tr;
+      break;
     } else if ((opr8tr != 7 && opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
       postfix_opstack[ p + 1 ] = opr8tr;
       break;
