@@ -13,17 +13,17 @@ unsigned int infix_key_x = 0;
 unsigned int numberrepeat = 0;
 
 //infixnumberstack and the Cin String
-char infixRAWnumberStack[1000];  //string of all the numbers together.
-char infixstring[1000];
+char infixRAWnumberStack[400];  //string of all the numbers together.
+char infixstring[400];
 //processed stacks of information
-int infix_stack_reference[38]; // reference key showing INFIX notation of the expression in a simplified view
-int postfix_stack_reference[38]; // reference key showing POSTFIX notation of the expression in a simplified view
-int postfix_opstack[20]; // a stack used for rearranging operators to get them in PEMDAS order.
-long numberStack_FINAL[30]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+byte infix_stack_reference[100]; // reference key showing INFIX notation of the expression in a simplified view
+byte postfix_stack_reference[100]; // reference key showing POSTFIX notation of the expression in a simplified view
+byte postfix_opstack[50]; // a stack used for rearranging operators to get them in PEMDAS order.
+long numberStack_FINAL[50]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
 
 /* adjust the sizes of these stacks accordingly to your device,
-all these calculations are done rather quickly and well, but be mindful of the amount of operators
-and minimum needed operands required for the infix stack and postfix stack.*/
+  all these calculations are done rather quickly and well, but be mindful of the amount of operators
+  and minimum # of operands required for proper function of the infix stack and postfix stack.*/
 
 //count of how many open parenthesis are in the expression
 unsigned int openparenth_count = 0;
@@ -44,7 +44,7 @@ void doNothing() {
   active_parenth = false;
 }
 
-void serialdataPull() {
+void infixdataPull() {
   if (Serial.available() > 0) { //make sure serial is open Cin
     int incomingByte = Serial.read();
     byteChar = char(incomingByte);
@@ -230,6 +230,7 @@ void calculate_postfix() {
     Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
   }
 }
+
 void copy(byte location, byte input ) {
   postfix_stack_reference[location] = input;
   numberrepeat++;
@@ -271,7 +272,7 @@ void pushtostack(byte precedence, int opr8tr) {
         int operator_2b_popped = postfix_opstack[p];
         postfix_opstack[p] = 0;
         if (operator_2b_popped != 6) {
-          delay(1000);
+          delay(100);
           Serial.println("==============================================" + String(operator_2b_popped));
           copy(numberrepeat, operator_2b_popped);
         } else break;
