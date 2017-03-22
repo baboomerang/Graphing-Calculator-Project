@@ -13,8 +13,8 @@ unsigned int infix_key_x = 0;
 unsigned int numberrepeat = 0;
 
 //infixnumberstack and the Cin String
-char infixRAWnumberStack[400];  //string of all the numbers together.
-char infixstring[400];
+char infixRAWnumberStack[100];  //string of all the numbers together.
+char infixstring[100];
 //processed stacks of information
 byte infix_stack_reference[100]; // reference key showing INFIX notation of the expression in a simplified view
 byte postfix_stack_reference[100]; // reference key showing POSTFIX notation of the expression in a simplified view
@@ -79,12 +79,12 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           active_parenth = true;
           if ( cutHere != num_x ) {
             cutHere = num_x;
-            Serial.println("DEBUG: save num INVOKED BY CLOSING PARENTHESIS");
+            Serial.println(F("DEBUG: save num INVOKED BY CLOSING PARENTHESIS"));
             save_num(start, cutHere, num_indx);
           }
           save_op(7); // this line IS VERY ORDER SENSITIVE, DO NOT CHANGE THE ORDER OTHERWISE STUFF BREAKS. THIS LINE HAS TO BE HERE
           if (openparenth_count == 0) {
-            Serial.println("PARENTH COUNT IS 0");
+            Serial.println(F("PARENTH LOGIC DEBUG: PARENTH COUNT IS 0"));
             syntax_check(i); //=================================================== as a terrible design choice, this whole program continues by calling the syntax check soubroutine
           }
           break;
@@ -131,7 +131,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           //             abort();
           //           } else {
           cutHere = num_x;
-          Serial.println("SAVENUMINVOKED BY MULTIPLICATION");
+          //          Serial.println(F("SAVENUM INVOKED BY MULTIPLICATION"));
           active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
           save_op(4);
           start = cutHere;
@@ -189,7 +189,7 @@ void save_op(int reference_type) {
 void syntax_check(int end_of_string) {
   if (end_of_string == (strlen(infixstring) - 1)) {
     openparenth_count != 0 ? abort() : calculate_postfix();
-    Serial.println("so we didnt abort either? NICE");
+    Serial.println(F("so we didnt abort either? NICE"));
   }
 }
 
@@ -203,16 +203,16 @@ void calculate_postfix() {
       /* we know that the infix notation expression will always end with a 1,
         so by piggybacking on that predictable ending, we can tie together
         a final check to see if its actually the end of the string*/
-      if ( infix_stack_reference[infix_key_x + 1] == 0 ) { // WARNING!!!!!!!!!!!!!!!!! this code might potentially be problematic if we have infix expressions that end in parenthesis.
-        //        //======== Operator Stack Popping Code
-        //        for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-        //          int opr8tr = postfix_opstack[p];
-        //          if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
-        //            copy(numberrepeat, opr8tr);
-        //          }
-        //        }
-        //        //=====================
-      }
+      //      if ( infix_stack_reference[infix_key_x + 1] == 0 ) { // WARNING!!!!!!!!!!!!!!!!! this code might potentially be problematic if we have infix expressions that end in parenthesis.
+      //             ======== Operator Stack Popping Code
+      //                for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
+      //                  int opr8tr = postfix_opstack[p];
+      //                  if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
+      //                    copy(numberrepeat, opr8tr);
+      //                  }
+      //                }
+      //              =====================
+      //      }
     } // end of if i == 1 so anything below this checkes for other types of reference numbers. *ie operators or modifier characters.
     if ( i == 2 || i == 3 ) {
       pushtostack(2, i);
@@ -226,9 +226,21 @@ void calculate_postfix() {
       pushtostack(4, i);
     } // prints the postfix stack reference when we reach end of string.
   }
+
+  /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack */
   for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
     Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
   }
+
+}
+
+void print_opstack() {
+  delay(50);
+  Serial.print("Opstack is : ");
+  for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
+    Serial.print(String(postfix_opstack[i]));
+  } Serial.println("");
+  delay(50);
 }
 
 void copy(byte location, byte input ) {
@@ -237,12 +249,8 @@ void copy(byte location, byte input ) {
 }
 
 void pushtostack(byte precedence, int opr8tr) {
-  delay(50);
-  for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
-    Serial.print(String(postfix_opstack[i]));
-  } Serial.println("");
-  delay(50);
-  Serial.println("precedence: " + String(precedence) + " operator value: " + String(opr8tr));
+  print_opstack();
+  Serial.println("INPUT OPERATOR HAS A precedence: " + String(precedence) + " operator value: " + String(opr8tr));
   //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
   for ( int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
 
@@ -271,12 +279,12 @@ void pushtostack(byte precedence, int opr8tr) {
       break;
     } else if (precedence == 255 && opr8tr == 7) {
       if (postfix_opstack[p] != 0) {
-        Serial.println("we have for p: " + String(p) + "   " + "for postfix_opstack[pp], we have : " + String(postfix_opstack[p]));
+        Serial.println("POPPING STACK FROM THE TOP IN POSITION: " + String(p) + "   " + "For postfix_opstack[p], we have : " + String(postfix_opstack[p]));
         int operator_2b_popped = postfix_opstack[p];
         postfix_opstack[p] = 0;
         if (operator_2b_popped != 6) {
           delay(100);
-          Serial.println("==============================================" + String(operator_2b_popped));
+          Serial.println("=======POPPED OPERATOR========= : " + String(operator_2b_popped));
           copy(numberrepeat, operator_2b_popped);
         } else break;
       }
