@@ -37,7 +37,7 @@ void setup() {
 }
 //the whole code is nested under serialdataPull();
 void loop() {
-  serialdataPull();
+  infixdataPull();
 }
 
 void doNothing() {
