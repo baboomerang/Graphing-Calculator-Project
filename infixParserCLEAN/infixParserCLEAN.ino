@@ -263,6 +263,9 @@ void pushtostack(byte precedence, int opr8tr) {
     } else if ((opr8tr != 7 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
       postfix_opstack[ p + 1 ] = opr8tr;
       break;
+    } else if ((opr8tr != 7 && opr8tr == 8 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0))  {
+      postfix_opstack[ p + 1 ] = opr8tr;
+      break;
     } else if ((opr8tr != 7 && opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
       postfix_opstack[ p + 1 ] = opr8tr;
       break;
