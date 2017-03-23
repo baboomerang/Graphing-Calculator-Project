@@ -30,6 +30,9 @@ unsigned int openparenth_count = 0;
 //this is an immediate
 bool active_parenth = false;
 
+
+// ((3*5325)^7/3412*16)-12+(1555/12-29421)^2      test infix string for code analysis
+
 void setup() {
   infixstring[0] = '(';
   infX = 1;
@@ -227,7 +230,7 @@ void calculate_postfix() {
     } // prints the postfix stack reference when we reach end of string.
   }
 
-  /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack */
+  /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack and pushtostack() exits */
   for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
     Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
   }
@@ -250,7 +253,7 @@ void copy(byte location, byte input ) {
 
 void pushtostack(byte precedence, int opr8tr) {
   print_opstack();
-  Serial.println("INPUT OPERATOR HAS A precedence: " + String(precedence) + " operator value: " + String(opr8tr));
+  Serial.println("pushtostack() DEBUG: precedence: " + String(precedence) + " operator value: " + String(opr8tr));
   //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
   for ( int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
 
@@ -279,7 +282,7 @@ void pushtostack(byte precedence, int opr8tr) {
       break;
     } else if (precedence == 255 && opr8tr == 7) {
       if (postfix_opstack[p] != 0) {
-        Serial.println("POPPING STACK FROM THE TOP IN POSITION: " + String(p) + "   " + "For postfix_opstack[p], we have : " + String(postfix_opstack[p]));
+        Serial.println("Checking the operator in the postfix_opstack[" + String(p) + "]   " + "we have : " + String(postfix_opstack[p]));
         int operator_2b_popped = postfix_opstack[p];
         postfix_opstack[p] = 0;
         if (operator_2b_popped != 6) {
