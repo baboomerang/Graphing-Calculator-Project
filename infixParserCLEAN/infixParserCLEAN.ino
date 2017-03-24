@@ -43,8 +43,8 @@ void loop() {
   infixdataPull();
 }
 
-void doNothing() {
-  active_parenth = false;
+void doNothing(int code) {
+  if (code == 0) active_parenth = false;
 }
 
 void infixdataPull() {
@@ -98,7 +98,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           //             abort();
           //           } else {
           cutHere = num_x;
-          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(8);
           start = cutHere;
           //           }
@@ -110,7 +110,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           //             abort();
           //           } else {
           cutHere = num_x;
-          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(2);
           start = cutHere;
           //           }
@@ -122,7 +122,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           //             abort();
           //           } else {
           cutHere = num_x;
-          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(3);
           start = cutHere;
           //           }
@@ -135,7 +135,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           //           } else {
           cutHere = num_x;
           //          Serial.println(F("SAVENUM INVOKED BY MULTIPLICATION"));
-          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(4);
           start = cutHere;
           //           }
@@ -147,7 +147,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           //             abort();
           //           } else {
           cutHere = num_x;
-          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing();
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(5);
           start = cutHere;
           //           }
@@ -160,6 +160,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
       Serial.print(String(infix_stack_reference[i]));
     } Serial.println("");
 
+    evaluate_postfix();
   } //end of if character g
 } //end of infixproc
 
@@ -295,11 +296,19 @@ void pushtostack(byte precedence, int opr8tr) {
   }
 }
 
-void evaluate_postfix(int p) {
+void perform_operation(int input_operator, int pos) {
+  for (int z = pos; z > 0; z--) {
+    Serial.println("Z POSITION OF DETECTED INPUT OF OPERATOR: " + String(z));
+  }
+}
+
+void evaluate_postfix() {
+  Serial.println("WE GOT IN TO EVALUATING POSTFIX");
+  int numberstack_index = -1;
   for ( int p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p++ ) {
-    int number_index;
     int value = postfix_stack_reference[p];
-    value == 1 ? number_index++ : number_index == number_index;
-    //    value > 1 ? placeholder(DELETE THIS IT WONT COMPILE) : EXCEPTION();
+    Serial.println("Position on Reference Stack : " + String(p));
+    value == 1 ? numberstack_index++ : numberstack_index == numberstack_index;
+    if (value > 1) perform_operation(value, p);
   }
 }
