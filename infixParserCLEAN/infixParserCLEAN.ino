@@ -297,18 +297,34 @@ void pushtostack(byte precedence, int opr8tr) {
 }
 
 void perform_operation(int input_operator, int pos) {
+  int numberstack_index = -1;  
+  
   for (int z = pos; z > 0; z--) {
     Serial.println("Z POSITION OF DETECTED INPUT OF OPERATOR: " + String(z));
+    if ( postfix_stack_reference[z] == 1 ) numberstack_index++;
   }
+  
+  if (input_operator == 2) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] - numberstack_FINAL[numerstack_index];
+  if (input_operator == 3) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] + numberstack_FINAL[numerstack_index];
+  if (input_operator == 8) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] exp numberstack_FINAL[numerstack_index];
+  if (input_operator == 4) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] * numberstack_FINAL[numerstack_index];
+  if (input_operator == 5) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] / numberstack_FINAL[numerstack_index];
+  
 }
 
 void evaluate_postfix() {
   Serial.println("WE GOT IN TO EVALUATING POSTFIX");
-  int numberstack_index = -1;
+  boolean had_a_number = false;
   for ( int p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p++ ) {
     int value = postfix_stack_reference[p];
     Serial.println("Position on Reference Stack : " + String(p));
-    value == 1 ? numberstack_index++ : numberstack_index == numberstack_index;
-    if (value > 1) perform_operation(value, p);
+    
+    value == 1 ? had_a_number = true : had_a_number == had_a_number;
+   
+    if (value > 1) { 
+      perform_operation(value, p); 
+      had_a_number = false;
+    }
+    
   }
 }
