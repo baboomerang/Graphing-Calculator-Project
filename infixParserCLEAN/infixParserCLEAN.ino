@@ -297,34 +297,71 @@ void pushtostack(byte precedence, int opr8tr) {
 }
 
 void perform_operation(int input_operator, int pos) {
-  int numberstack_index = -1;  
-  
-  for (int z = pos; z > 0; z--) {
-    Serial.println("Z POSITION OF DETECTED INPUT OF OPERATOR: " + String(z));
-    if ( postfix_stack_reference[z] == 1 ) numberstack_index++;
+  int numberstack_index = -1;
+  for (int z = pos; z >= 0; z--) {
+    if ( postfix_stack_reference[z] == 1 ) {
+      numberstack_index++;
+      Serial.println("# of 1's detected when backprinting" + String(numberstack_index));
+    }
   }
-  
-  if (input_operator == 2) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] - numberstack_FINAL[numerstack_index];
-  if (input_operator == 3) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] + numberstack_FINAL[numerstack_index];
-  if (input_operator == 8) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] exp numberstack_FINAL[numerstack_index];
-  if (input_operator == 4) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] * numberstack_FINAL[numerstack_index];
-  if (input_operator == 5) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] / numberstack_FINAL[numerstack_index];
-  
+  if (input_operator == 2) {
+    Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " SUBRACTION");
+    numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1 ] - numberStack_FINAL[numberstack_index];
+    Serial.println("result" + String(numberstack_index - 1));
+    bring_stack_down(numberstack_index);
+    print_numberstack();
+  }
+  if (input_operator == 3) {
+    Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " ADDITION");
+    numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1 ] + numberStack_FINAL[numberstack_index];
+    Serial.println("result " + String(numberstack_index - 1));
+    bring_stack_down(numberstack_index);
+    print_numberstack();
+  }
+  //  if (input_operator == 8) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] exp numberstack_FINAL[numerstack_index];
+  if (input_operator == 4) {
+    Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " MULTIPLYING");
+    numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1 ] * numberStack_FINAL[numberstack_index];
+    Serial.println("result " + String(numberstack_index - 1));
+    bring_stack_down(numberstack_index);
+    print_numberstack();
+  }
+  if (input_operator == 5) {
+    Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " DIVIDING");
+    numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1 ] / numberStack_FINAL[numberstack_index];
+    Serial.println("result " + String(numberstack_index - 1));
+    bring_stack_down(numberstack_index);
+    print_numberstack();
+  }
 }
 
+void bring_stack_down(int pop_at_this_x) {
+  for ( int i = pop_at_this_x ; i < (sizeof(numberStack_FINAL) / sizeof(long)); i++) {
+    numberStack_FINAL[pop_at_this_x] = numberStack_FINAL[pop_at_this_x + 1];
+  }
+}
+
+void print_numberstack() {
+  Serial.print("Numberstack: ");
+  for ( int i = 0; i < (sizeof(numberStack_FINAL) / sizeof(long)); i++) {
+    Serial.print(String(numberStack_FINAL[i]) + " ");
+  } Serial.println(" ");
+}
 void evaluate_postfix() {
   Serial.println("WE GOT IN TO EVALUATING POSTFIX");
   boolean had_a_number = false;
+  print_numberstack();
   for ( int p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p++ ) {
     int value = postfix_stack_reference[p];
-    Serial.println("Position on Reference Stack : " + String(p));
-    
+    Serial.println("Position on Reference Stack : " + String(p) + "  Value: " + String(value));
+
     value == 1 ? had_a_number = true : had_a_number == had_a_number;
-   
-    if (value > 1) { 
-      perform_operation(value, p); 
+
+    if (value > 1) {
+      Serial.println("Value greater than 1 at position: " + String(p));
+      perform_operation(value, p);
       had_a_number = false;
     }
-    
+
   }
 }
