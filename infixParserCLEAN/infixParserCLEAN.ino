@@ -18,6 +18,7 @@ char infixstring[100];
 //processed stacks of information
 byte infix_stack_reference[100]; // reference key showing INFIX notation of the expression in a simplified view
 byte postfix_stack_reference[100]; // reference key showing POSTFIX notation of the expression in a simplified view
+byte postfix_stack_copy[100]; // copy of reference stack for processing
 byte postfix_opstack[50]; // a stack used for rearranging operators to get them in PEMDAS order.
 long numberStack_FINAL[50]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
 
@@ -303,12 +304,13 @@ void perform_operation(int input_operator, int pos) {
       numberstack_index++;
       Serial.println("# of 1's detected when backprinting" + String(numberstack_index));
     }
-  }
+  } numberstack_index -= delete_ones;
   if (input_operator == 2) {
     Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " SUBRACTION");
     numberStack_FINAL[numberstack_index - 1] -= numberStack_FINAL[numberstack_index];
     Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
+    delete_ones++;
     print_numberstack();
   }
   if (input_operator == 3) {
@@ -316,6 +318,7 @@ void perform_operation(int input_operator, int pos) {
     numberStack_FINAL[numberstack_index - 1] += numberStack_FINAL[numberstack_index];
     Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
+    delete_ones++;
     print_numberstack();
   }
   //  if (input_operator == 8) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] exp numberstack_FINAL[numerstack_index];
@@ -324,6 +327,7 @@ void perform_operation(int input_operator, int pos) {
     numberStack_FINAL[numberstack_index - 1] *= numberStack_FINAL[numberstack_index];
     Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
+    delete_ones++;
     print_numberstack();
   }
   if (input_operator == 5) {
@@ -331,6 +335,7 @@ void perform_operation(int input_operator, int pos) {
     numberStack_FINAL[numberstack_index - 1] /= numberStack_FINAL[numberstack_index];
     Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
+    delete_ones++;
     print_numberstack();
   }
 }
@@ -347,7 +352,9 @@ void print_numberstack() {
     Serial.print(String(numberStack_FINAL[i]) + " ");
   } Serial.println(" ");
 }
+
 void evaluate_postfix() {
+  byte delete_ones = 0; // initialize the offset to 0. everytime we perform an operation where 2 operands join into 1, we increment this number up once to make sure we have a proper location of math done.
   Serial.println("WE GOT IN TO EVALUATING POSTFIX");
   boolean had_a_number = false;
   print_numberstack();
