@@ -306,30 +306,30 @@ void perform_operation(int input_operator, int pos) {
   }
   if (input_operator == 2) {
     Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " SUBRACTION");
-    numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1 ] - numberStack_FINAL[numberstack_index];
-    Serial.println("result" + String(numberstack_index - 1));
+    numberStack_FINAL[numberstack_index - 1] -= numberStack_FINAL[numberstack_index];
+    Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
     print_numberstack();
   }
   if (input_operator == 3) {
     Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " ADDITION");
-    numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1 ] + numberStack_FINAL[numberstack_index];
-    Serial.println("result " + String(numberstack_index - 1));
+    numberStack_FINAL[numberstack_index - 1] += numberStack_FINAL[numberstack_index];
+    Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
     print_numberstack();
   }
   //  if (input_operator == 8) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] exp numberstack_FINAL[numerstack_index];
   if (input_operator == 4) {
     Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " MULTIPLYING");
-    numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1 ] * numberStack_FINAL[numberstack_index];
-    Serial.println("result " + String(numberstack_index - 1));
+    numberStack_FINAL[numberstack_index - 1] *= numberStack_FINAL[numberstack_index];
+    Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
     print_numberstack();
   }
   if (input_operator == 5) {
     Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " DIVIDING");
-    numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1 ] / numberStack_FINAL[numberstack_index];
-    Serial.println("result " + String(numberstack_index - 1));
+    numberStack_FINAL[numberstack_index - 1] /= numberStack_FINAL[numberstack_index];
+    Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
     print_numberstack();
   }
