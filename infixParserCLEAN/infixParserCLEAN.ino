@@ -1,3 +1,5 @@
+#include <MemoryFree.h>
+
 #include "BigNumber.h"
 #include "math.h"
 
@@ -42,7 +44,7 @@ bool active_parenth = false;
 
 void setup() {
   BigNumber::begin();        //                                                                                                          THIS IS WHERE THE BIGNUMBER LIBRARY BEGINS
-  BigNumber::setScale(10);
+  BigNumber::setScale(20);
   infixstring[0] = '(';
   infX = 1;
   Serial.begin(9600);
@@ -179,10 +181,10 @@ void save_num(int start, int cutpoint, int index_xpos) {
   String Z = String(infixRAWnumberStack);
   String Zshort = Z.substring(start, cutpoint);
   //the cutpoint does not include the value at the cutpoint. its an exclusion limit. if we had 97806 and cut point was 4 digits with start 0, we would just get the first 3 (978)
-  //  BigNumber i = BigNumber(Zshort.toInt());
-  char * s = Zshort;
-  BigNumber i = s;
-  free(s);
+  BigNumber i = BigNumber(Zshort.toInt());
+  //  char * s = Zshort;
+  //  BigNumber i = s;
+  //  free(s);
   numberStack_FINAL[index_xpos] = i;
   num_indx++;
   //numberStack_FINAL IS WHERE ALL THE FULL NUMBERS ARE STORED.  numberStack_FINAL[x] = "23223" numberStack_FINAL[x+1] = "3567" .... etc
@@ -252,12 +254,12 @@ void calculate_postfix() {
 }
 
 void print_opstack() {
-  delay(50);
+  //  delay(50);
   //Serial.print("Opstack is : ");
   for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
     //Serial.print(String(postfix_opstack[i]));
   } //Serial.println("");
-  delay(50);
+  //  delay(50);
 }
 
 void copy(byte location, byte input ) {
@@ -300,7 +302,7 @@ void pushtostack(byte precedence, int opr8tr) {
         int operator_2b_popped = postfix_opstack[p];
         postfix_opstack[p] = 0;
         if (operator_2b_popped != 6) {
-          delay(100);
+          //          delay(100);
           //Serial.println("=======POPPED OPERATOR========= : " + String(operator_2b_popped));
           copy(numberrepeat, operator_2b_popped);
         } else break;
@@ -370,10 +372,10 @@ void bring_stack_down(int pop_at_this_x) {
 }
 
 void print_numberstack() {
-  Serial.print("Numberstack: ");
+  //Serial.print("Numberstack: ");
   for ( int t = 0; t < (sizeof(numberStack_FINAL) / sizeof(BigNumber)); t++) {
-    Serial.print(String(numberStack_FINAL[t]) + " ");
-  } Serial.println(" ");
+    //Serial.print(String(numberStack_FINAL[t]) + " ");
+  } //Serial.println(" ");
 }
 
 void evaluate_postfix() {
@@ -393,5 +395,7 @@ void evaluate_postfix() {
     }
 
   }
-  print_numberstack();
+  Serial.print("Finished Processing, we got result approximate : ");
+  Serial.println(numberStack_FINAL[0]);
+  //  print_numberstack();
 }
