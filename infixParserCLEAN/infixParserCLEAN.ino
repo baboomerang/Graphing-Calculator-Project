@@ -21,14 +21,14 @@ unsigned int numberrepeat = 0;
 byte delete_ones = 0;
 
 //infixnumberstack and the Cin String
-char infixRAWnumberStack[100];  //string of all the numbers together.
-char infixstring[100];
+char infixRAWnumberStack[300];  //string of only the numbers together in a linear fashion. (makes it easy for cutting and sorting into the number stack)
+char infixstring[300]; // infix string buffer from serial input
 //processed stacks of information
-byte infix_stack_reference[100]; // reference key showing INFIX notation of the expression in a simplified view
-byte postfix_stack_reference[100]; // reference key showing POSTFIX notation of the expression in a simplified view
+byte infix_stack_reference[200]; // reference key showing INFIX notation of the expression in a simplified view
+byte postfix_stack_reference[200]; // reference key showing POSTFIX notation of the expression in a simplified view
 //byte postfix_stack_copy[100]; // copy of reference stack for processing
 byte postfix_opstack[50]; // a stack used for rearranging operators to get them in PEMDAS order.
-BigNumber numberStack_FINAL[20]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+BigNumber numberStack_FINAL[50]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
 
 /* adjust the sizes of these stacks accordingly to your device,
   all these calculations are done rather quickly and well, but be mindful of the amount of operators
@@ -36,7 +36,7 @@ BigNumber numberStack_FINAL[20]; // where operands are stored by index nmbrstack
 
 //count of how many open parenthesis are in the expression
 unsigned int openparenth_count = 0;
-//this is an immediate
+//this is an immediate operator to parenthesis checker. Prevents operators from performing arbitrary operations on non-existing operands.
 bool active_parenth = false;
 
 
@@ -50,7 +50,7 @@ void setup() {
   Serial.begin(9600);
 }
 
-//the whole code is nested under serialdataPull();
+//the whole code is nested under infixdataPull();
 void loop() {
   infixdataPull();
 }
@@ -66,7 +66,7 @@ void infixdataPull() {
     byteChar != 'g' ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
     infX += 1;
     //=============== INFIXPARSER ========
-    infixproc();
+    infixproc();                       // it will loop infixproc infinitely. infixproc will continue with its own subroutines once the character "g" is detected.
     //====================================
   } //end of if serial available
 } // end of serial data pull
@@ -221,7 +221,7 @@ void calculate_postfix() {
       copy(numberrepeat, 1);
       /* we know that the infix notation expression will always end with a 1,
         so by piggybacking on that predictable ending, we can tie together
-        a final check to see if its actually the end of the string*/
+        a final check to see if its actually the end of the string */
       //      if ( infix_stack_reference[infix_key_x + 1] == 0 ) { // WARNING!!!!!!!!!!!!!!!!! this code might potentially be problematic if we have infix expressions that end in parenthesis.
       //             ======== Operator Stack Popping Code
       //                for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
@@ -243,23 +243,24 @@ void calculate_postfix() {
       pushtostack(255, i);
     } else if ( i == 8) {
       pushtostack(4, i);
-    } // prints the postfix stack reference when we reach end of string.
+    }
   }
 
   /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack and pushtostack() exits */
-  for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-    //Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
-  }
+  /*for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
+    Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
+  }*/
 
 }
 
 void print_opstack() {
-  //  delay(50);
-  //Serial.print("Opstack is : ");
+  /*
+  delay(50);
+  Serial.print("Opstack is : ");
   for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
-    //Serial.print(String(postfix_opstack[i]));
-  } //Serial.println("");
-  //  delay(50);
+   Serial.print(String(postfix_opstack[i]));
+  }Serial.println("");
+  delay(50);  */
 }
 
 void copy(byte location, byte input ) {
@@ -325,16 +326,14 @@ void perform_operation(int input_operator, int pos) {
     numberStack_FINAL[numberstack_index - 1] -= numberStack_FINAL[numberstack_index];
     //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
-    delete_ones++;
-    print_numberstack();
+    //print_numberstack();
   }
   if (input_operator == 3) {
     //Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " ADDITION");
     numberStack_FINAL[numberstack_index - 1] += numberStack_FINAL[numberstack_index];
     //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
-    delete_ones++;
-    print_numberstack();
+    //print_numberstack();
   }
   //  if (input_operator == 8) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] exp numberstack_FINAL[numerstack_index];
   if (input_operator == 4) {
@@ -342,24 +341,21 @@ void perform_operation(int input_operator, int pos) {
     numberStack_FINAL[numberstack_index - 1] *= numberStack_FINAL[numberstack_index];
     //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
-    delete_ones++;
-    print_numberstack();
+    //print_numberstack();
   }
   if (input_operator == 5) {
     //Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " DIVIDING");
     numberStack_FINAL[numberstack_index - 1] /= numberStack_FINAL[numberstack_index];
     //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
-    delete_ones++;
-    print_numberstack();
+    //print_numberstack();
   }
   if (input_operator == 8) {
     //Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " EXPONENTIATION");
     numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1].pow(numberStack_FINAL[numberstack_index]);
     //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
     bring_stack_down(numberstack_index);
-    delete_ones++;
-    print_numberstack();
+    //print_numberstack();
   }
 }
 
@@ -369,33 +365,38 @@ void bring_stack_down(int pop_at_this_x) {
     //Serial.println("numberStack_FINAL[m]: " + String(numberStack_FINAL[m]) + " numberStack_FINAL[m + 1]: " + String(numberStack_FINAL[m + 1]));
     numberStack_FINAL[m] = numberStack_FINAL[m + 1];
   }
+  delete_ones++;
 }
 
-void print_numberstack() {
-  //Serial.print("Numberstack: ");
+/*void print_numberstack() {
+  Serial.print("Numberstack: ");
   for ( int t = 0; t < (sizeof(numberStack_FINAL) / sizeof(BigNumber)); t++) {
-    //Serial.print(String(numberStack_FINAL[t]) + " ");
-  } //Serial.println(" ");
+    Serial.print(String(numberStack_FINAL[t]) + " ");
+  } Serial.println(" ");
 }
+*/
 
 void evaluate_postfix() {
   //Serial.println("WE GOT IN TO EVALUATING POSTFIX");
-  boolean had_a_number = false;
-  print_numberstack();
+  //boolean had_a_number = false;
+  //print_numberstack();
   for ( int p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p++ ) {
     int value = postfix_stack_reference[p];
     //Serial.println("Position on Reference Stack : " + String(p) + "  Value: " + String(value));
-
-    value == 1 ? had_a_number = true : had_a_number == had_a_number;
-
+    //value == 1 ? had_a_number = true : had_a_number == had_a_number;
     if (value > 1) {
       //Serial.println("Value greater than 1 at position: " + String(p));
       perform_operation(value, p);
-      had_a_number = false;
+      //had_a_number = false;
     }
-
   }
-  Serial.print("Finished Processing, we got result approximate : ");
-  Serial.println(numberStack_FINAL[0]);
-  //  print_numberstack();
+  
+  if ( numberStack_FINAL[1] != 0 ) {
+   Serial.println("OPERATOR SYNTAX ERROR: insufficient or superfluous operator(s) in the reference stack");
+   } else { 
+     Serial.print("Finished Processing, we got result approximate : ");
+     Serial.println(numberStack_FINAL[0]);
+    //print_numberstack();
+  }
+  
 }
