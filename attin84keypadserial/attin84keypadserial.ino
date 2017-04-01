@@ -17,14 +17,14 @@
 #include <Bounce2.h>
 
 #define BUTTON_PIN_ADD 8
-#define BUTTON_PIN_SUBTRACT 6
+#define BUTTON_PIN_SUBTRACT 7
 
 
 // ADD PINS HERE FOR DIVISION AND SUBTRACTION
 
 const int Rx = 10; // this is physical pin 2
 const int Tx = 9; // this is physical pin 3
-const int led = 7;
+// const int led = 7;
 
 SoftwareSerial tinySerial(Rx, Tx);
 const byte ROWS = 4; //four rows
@@ -74,7 +74,7 @@ void loop() {
     tinySerial.write(keypressed);
   }
 
-  digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)             // wait for a second
+//   digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)             // wait for a second
 
 }  // End loop
 
