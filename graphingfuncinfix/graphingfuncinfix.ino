@@ -50,6 +50,8 @@
   SLC
 
 */
+#include "BigNumber.h"
+
 
 #include <SPI.h>
 #include <SD.h>
@@ -102,46 +104,9 @@
 #define DKPINK    0x9009
 #define DKPURPLE  0x4010
 #define DKGREY    0x4A49
-
-
 #define ADJ_PIN A0
 
 double a1, b1, c1, d1, r2, r1, vo, tempC, tempF, tempK;
-
-byte buttonprocessed = 0;
-char byteChar;
-
-unsigned int num_x = 0;
-
-char infixRAWnumberStack[100];
-char infixstring[1000];
-//char postfixstring[1000];
-
-unsigned int infX = 0;
-
-//bool graph = LOW;
-
-long numberStack_FINAL[26];
-
-char procChar;
-unsigned int num_indx = 0;
-unsigned int openparenth_count = 0;
-
-unsigned int infix_key_x = 0;
-
-int infix_stack_reference[50];
-int postfix_opstack[50];
-
-int postfix_stack_reference[50];
-unsigned int numberrepeat = 0;
-unsigned int location = 0;
-
-// 1 = number
-// 2 = sub
-// 3 = add
-// 4 = mult
-// 5 = div
-// 6 = other
 
 Adafruit_HX8357 tft = Adafruit_HX8357(TFT_CS, TFT_DC);
 
@@ -157,26 +122,64 @@ boolean display7 = true;
 boolean display8 = true;
 boolean display9 = true;
 double ox , oy ;
+//===========================================================
+//input / cin variables
+char byteChar;
+
+//Cin input X location of infix expression (infX) printing from left to right
+unsigned int infX = 0;
+// saved number array position in order ie. numberStack_FINAL[3] = "2323212" where num_indx = 3
+unsigned int num_indx = 0;
+// number delimiter based by operator dependency
+unsigned int num_x = 0;
+//infix reference stack X location
+unsigned int infix_key_x = 0;
+//postfix reference X location
+unsigned int numberrepeat = 0;
+
+// initialize the offset to 0. everytime we perform an operation where 2 operands join into 1, we increment this number up once to make sure we have a proper location of math done.
+byte delete_ones = 0;
+
+//infixnumberstack and the Cin String
+char infixRAWnumberStack[300];  //string of only the numbers together in a linear fashion. (makes it easy for cutting and sorting into the number stack)
+char infixstring[300]; // infix string buffer from serial input
+//processed stacks of information
+byte infix_stack_reference[200]; // reference key showing INFIX notation of the expression in a simplified view
+byte postfix_stack_reference[200]; // reference key showing POSTFIX notation of the expression in a simplified view
+//byte postfix_stack_copy[100]; // copy of reference stack for processing
+byte postfix_opstack[50]; // a stack used for rearranging operators to get them in PEMDAS order.
+BigNumber numberStack_FINAL[50]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+
+/* adjust the sizes of these stacks accordingly to your device,
+  all these calculations are done rather quickly and well, but be mindful of the amount of operators
+  and minimum # of operands required for proper function of the infix stack and postfix stack.*/
+
+//count of how many open parenthesis are in the expression
+unsigned int openparenth_count = 0;
+//this is an immediate operator to parenthesis checker. Prevents operators from performing arbitrary operations on non-existing operands.
+bool active_parenth = false;
 
 void setup() {
-  infixstring[0] = '(';
-  infX = 1;
   Serial.begin(9600);
   pinMode(ADJ_PIN, INPUT);
   tft.begin(HX8357D);
   tft.fillScreen(BLACK);
+  BigNumber::begin();  //                                           THIS IS WHERE THE BIGNUMBER LIBRARY BEGINS
+  BigNumber::setScale(20);
+  infixstring[0] = '(';
+  infX = 1;
+  Serial.begin(9600);
+  //  tft.setRotation(2);
+  //  a1 = 3.354016E-03 ;
+  //  b1 = 2.569850E-04 ;
+  //  c1 = 2.620131E-06 ;
+  //  d1 = 6.383091E-08 ;
 
-  tft.setRotation(2);
-  a1 = 3.354016E-03 ;
-  b1 = 2.569850E-04 ;
-  c1 = 2.620131E-06 ;
-  d1 = 6.383091E-08 ;
 
-
-  double x, y;
+  BigNumber x, y;
 
   tft.setRotation(1);
-  graph_Setup(x, y, 0.7, -80, 80, 10, -80, 80, 10, "X-Cubed(glitchy)", "lol", "x?", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
+  graph_Setup(x, y, 0.7, -80, 80, 10, -80, 80, 10, "tan(abs((inputX - 6)*(inputX - 9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
   //
   //
   //  for (x = -60; x <= 60; x += 1) {
@@ -196,11 +199,11 @@ void setup() {
   //    Graph(tft, x, y, 60, 290, 390, 260, -60, 60, 10, -60, 60, 10, "Inverted Log of X Squared", "x", "sin(x)", DKBLUE, RED, LTBLUE, WHITE, BLACK, display3);
   //
   //  }
-  delay(1000);
+  // delay(1000);
 }
 
 void loop() {
-  serialdataPull();
+  infixdataPull();
 }
 
 /*
@@ -238,151 +241,258 @@ void graph_Setup(double inputX, double inputY, double Plotfreq, double Xmin, dou
   int Ycorner = 290;
   for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
     //    inputY = inputX * inputX + 6 * inputX - 9;
-    inputY = tan(abs((inputX - 6) / (inputX + 9)));
+    inputY = tan(abs((inputX - 6) * (inputX - 9)));
     //    inputY = 20 * sin(inputX);
     Graph(tft, inputX, inputY, Xcorner, Ycorner, 420, 260, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
   }
 }
 
-void serialdataPull() {
-  if (Serial.available() > 0) {
+
+void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double w, double h, double xlo, double xhi, double xinc, double ylo, double yhi, double yinc, String title, String xlabel, String ylabel, unsigned int gcolor, unsigned int acolor, unsigned int pcolor, unsigned int tcolor, unsigned int bcolor, boolean & redraw) {
+
+  double ydiv, xdiv;
+  // initialize old x and old y in order to draw the first point of the graph
+  // but save the transformed value
+  // note my transform funcition is the same as the map function, except the map uses long and we need doubles
+  //static double ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
+  //static double oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
+  double i;
+  double temp;
+  int rot, newrot;
+
+  if (redraw == true) {
+
+    redraw = false;
+    ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
+    oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
+    // draw y scale
+    for ( i = ylo; i <= yhi; i += yinc) {
+      // compute the transform
+      temp =  (i - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
+
+      if (i == 0) {
+        d.drawLine(gx, temp, gx + w, temp, acolor);
+      }
+      else {
+        d.drawLine(gx, temp, gx + w, temp, gcolor);
+      }
+
+      d.setTextSize(1);
+      d.setTextColor(tcolor, bcolor);
+      d.setCursor(gx - 40, temp);
+      // precision is default Arduino--this could really use some format control
+      d.println(i);
+    }
+    // draw x scale
+    for (i = xlo; i <= xhi; i += xinc) {
+
+      // compute the transform
+
+      temp =  (i - xlo) * ( w) / (xhi - xlo) + gx;
+      if (i == 0) {
+        d.drawLine(temp, gy, temp, gy - h, acolor);
+      }
+      else {
+        d.drawLine(temp, gy, temp, gy - h, gcolor);
+      }
+
+      d.setTextSize(1);
+      d.setTextColor(tcolor, bcolor);
+      d.setCursor(temp, gy + 10);
+      // precision is default Arduino--this could really use some format control
+      d.println(i);
+    }
+
+    //now draw the labels
+    d.setTextSize(2);
+    d.setTextColor(tcolor, bcolor);
+    d.setCursor(gx , gy - h - 30);
+    d.println(title);
+
+    d.setTextSize(1);
+    d.setTextColor(acolor, bcolor);
+    d.setCursor(gx , gy + 20);
+    d.println(xlabel);
+
+    d.setTextSize(1);
+    d.setTextColor(acolor, bcolor);
+    d.setCursor(gx - 30, gy - h - 10);
+    d.println(ylabel);
+
+
+  }
+
+  //graph drawn now plot the data
+  // the entire plotting code are these few lines...
+  // recall that ox and oy are initialized as static above
+  x =  (x - xlo) * ( w) / (xhi - xlo) + gx;
+  y =  (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
+  d.drawLine(ox, oy, x, y, pcolor);
+  d.drawLine(ox, oy + 1, x, y + 1, pcolor);
+  d.drawLine(ox, oy - 1, x, y - 1, pcolor);
+  ox = x;
+  oy = y;
+
+}
+
+/*
+  End of graphing functioin
+*/
+
+void doNothing(int code) {
+  if (code == 0) active_parenth = false;
+}
+
+void infixdataPull() {
+  if (Serial.available() > 0) { //make sure serial is open Cin
     int incomingByte = Serial.read();
-    buttonprocessed = 1;
     byteChar = char(incomingByte);
     byteChar != 'g' ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
     infX += 1;
-    graphproc();
-    Serial.println("pre - G - infix string: " + String(infixstring));
-  }
-}
+    //=============== INFIXPARSER ========
+    infixproc();                       // it will loop infixproc infinitely. infixproc will continue with its own subroutines once the character "g" is detected.
+    //====================================
+  } //end of if serial available
+} // end of serial data pull
 
-void graphproc() {
+void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but arduino for some absurd reason, does not have C++ STDL so I had to manually code it in
   if (byteChar == 'g') {
-    infixstring[strlen(infixstring)] = ')';
     unsigned int start = 0;
     unsigned int cutHere = 0;
-    for (byte i = 0; i < strlen(infixstring); i++) {
-      procChar = char(infixstring[i]);
+    infixstring[strlen(infixstring)] = ')';
+    //once we press g, it will start to process the string entirely. thanks for the tip angad!
+    for (byte i = 0; i < strlen(infixstring); i++) { //from the starting point of the infix string until the end of the string.....
+      char procChar = char(infixstring[i]);
       switch (procChar) {
         case '0' ... '9':
-          infixRAWnumberStack[num_x] = procChar;
+          infixRAWnumberStack[num_x] = procChar;  //  infix string of 345+96-22/7-999 will become rawnumberstack of 34596227999 and depending on the distance between the sequence of numbers to the nearest operator, we can delimit and "cut" each number out of this raw stack like a stencil.
           num_x += 1;
           break;
         case '(':
           openparenth_count += 1;
+          save_op(6);
           break;
         case ')':
+          //Serial.println("num_x : " + String(num_x) + " | " + "parenthcount : " + String(openparenth_count) + " | " + "cutHere : " + String(cutHere) + " | ");
           openparenth_count -= 1;
+          active_parenth = true;
+          if ( cutHere != num_x ) {
+            cutHere = num_x;
+            //Serial.println(F("DEBUG: save num INVOKED BY CLOSING PARENTHESIS"));
+            save_num(start, cutHere, num_indx);
+          }
+          save_op(7); // this line IS VERY ORDER SENSITIVE, DO NOT CHANGE THE ORDER OTHERWISE STUFF BREAKS. THIS LINE HAS TO BE HERE
+          if (openparenth_count == 0) {
+            //Serial.println(F("PARENTH LOGIC DEBUG: PARENTH COUNT IS 0"));
+            syntax_check(i); //=================================================== as a terrible design choice, this whole program continues by calling the syntax check soubroutine
+          }
+          break;
+        case '^':
+          //           if (cutHere == num_x) {
+          //             //Serial.println("doubleoperatorerror");
+          //             //Serial.println("aborting.......");
+          //             abort();
+          //           } else {
           cutHere = num_x;
-          openparenth_count == 0 ? save_num(start, cutHere, num_indx) : abort();  //consider editing this abort() in the futre, why should we abort if we have additional parenthesis? assuming correct syntax?
-          //test_index(); // DONT TAKE THIS OFF LOL
-          syntax_check(i);
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
+          save_op(8);
+          start = cutHere;
+          //           }
           break;
         case '-':
-          if (cutHere == num_x) {
-            Serial.println("doubleoperatorerror");
-            Serial.println("aborting.......");
-            abort();
-          } else {
-            cutHere = num_x;
-            save_num(start, cutHere, num_indx);
-            num_indx++;
-            infix_stack_reference[infix_key_x] = 2;
-            infix_key_x++;
-            start = cutHere;
-            syntax_check(i);
-          }
+          //           if (cutHere == num_x) {
+          //             //Serial.println("doubleoperatorerror");
+          //             //Serial.println("aborting.......");
+          //             abort();
+          //           } else {
+          cutHere = num_x;
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
+          save_op(2);
+          start = cutHere;
+          //           }
           break;
         case '+':
-          if (cutHere == num_x) {
-            Serial.println("doubleoperatorerror");
-            Serial.println("aborting.......");
-            abort();
-          } else {
-            cutHere = num_x;
-            save_num(start, cutHere, num_indx);
-            num_indx++;
-            infix_stack_reference[infix_key_x] = 3;
-            infix_key_x++;
-            start = cutHere;
-            syntax_check(i);
-          }
+          //           if (cutHere == num_x) {
+          //             //Serial.println("doubleoperatorerror");
+          //             //Serial.println("aborting.......");
+          //             abort();
+          //           } else {
+          cutHere = num_x;
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
+          save_op(3);
+          start = cutHere;
+          //           }
           break;
         case '*':
-          if (cutHere == num_x) {
-            Serial.println("doubleoperatorerror");
-            Serial.println("aborting.......");
-            abort();
-          } else {
-            /*COMPARE THE NUMX VALUE WHEN CALLED TWICE,
-              IT STAYS THE SAME SO ADD A CHECKING CODE BLOCK FOR EACH OPERATOR CASE
-              SO IF THE NUMX DOESNT CHANGE WHEN ANOTHER OPERATOR IS CALLED, (THERE WASNT A NUMBER INBETWEEN) IT HAS TO MEAN A DOUBLE OPERATOR ERROR
-              BY THE USER                                 ALREADY ADDED 9:14 AM 2/27/17*/
-            cutHere = num_x;
-            save_num(start, cutHere, num_indx);
-            num_indx++;
-            infix_stack_reference[infix_key_x] = 4;
-            infix_key_x++;
-            start = cutHere;
-            syntax_check(i);
-          }
+          //           if (cutHere == num_x) {
+          //             //Serial.println("doubleoperatorerror");
+          //             //Serial.println("aborting.......");
+          //             abort();
+          //           } else {
+          cutHere = num_x;
+          //          //Serial.println(F("SAVENUM INVOKED BY MULTIPLICATION"));
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
+          save_op(4);
+          start = cutHere;
+          //           }
           break;
         case '/':
-          if (cutHere == num_x) {
-            Serial.println("doubleoperatorerror");
-            Serial.println("aborting.......");
-            abort();
-          } else {
-            cutHere = num_x;
-            save_num(start, cutHere, num_indx);
-            // save num also performs infix_key_x++  - just a tip and dont forget that
-            //calling this function and successfully saving a number adds 1(meaning a number) to the reference stack but also ++ to the X location of that stack.
-            //that x location variable is named infix_key_x and thus doesnt really complicate anything. Infact it just makes it more confusing because the infix_key_x is modified in different nested functions.
-            num_indx++;
-            infix_stack_reference[infix_key_x] = 5;
-            infix_key_x++;
-            start = cutHere;
-            syntax_check(i);
-          }
+          //           if (cutHere == num_x) {
+          //             //Serial.println("doubleoperatorerror");
+          //             //Serial.println("aborting.......");
+          //             abort();
+          //           } else {
+          cutHere = num_x;
+          active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
+          save_op(5);
+          start = cutHere;
+          //           }
           break;
-      }
-    }
-  }
-}
+      } // end of switch case
+    } // end of for loop
+    Serial.println("Recieved infix string: " + String(infixstring));
 
-//void test_index() {
-//  for (int lol = 0; lol < (sizeof(numberStack_FINAL) / sizeof(long)); lol++) {
-//    Serial.println(" So this is what we have for input index in " + String(lol) + " NUMBER:   " + String(numberStack_FINAL[lol]) );
-//    if (numberStack_FINAL[lol] == 0) break;
-//  }
-//  for (int lol = 0; lol < ((sizeof(infix_stack_reference)) / sizeof(int)); lol++) {
-//    Serial.println(" ~~~~~?@#!#!@$?!@$!@$!@#>!@3?!>@#   CALC PROC POSITION " + String(lol) + " TYPE STATUS:   " + String(infix_stack_reference[lol]) );
-//    if (infix_stack_reference[lol] == 0) break;
-//  }
-//}
+    for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(int)); i++) {
+      Serial.print(String(infix_stack_reference[i]));
+    } Serial.println("");
+
+    evaluate_postfix();
+  } //end of if character g
+} //end of infixproc
 
 void save_num(int start, int cutpoint, int index_xpos) {
-  infix_stack_reference[infix_key_x] = 1;
-  infix_key_x++;
+  save_op(1);
   String Z = String(infixRAWnumberStack);
   String Zshort = Z.substring(start, cutpoint);
-  //the cutpoint does not include the value at the cutpoint. its an exclusion limit. if we had 35456 and cut point was 4 with start 0, we would just get the first 3
-  long i = Zshort.toInt();
+  //the cutpoint does not include the value at the cutpoint. its an exclusion limit. if we had 97806 and cut point was 4 digits with start 0, we would just get the first 3 (978)
+  BigNumber i = BigNumber(Zshort.toInt());
+  //  char * s = Zshort;
+  //  BigNumber i = s;
+  //  free(s);
   numberStack_FINAL[index_xpos] = i;
+  num_indx++;
   //numberStack_FINAL IS WHERE ALL THE FULL NUMBERS ARE STORED.  numberStack_FINAL[x] = "23223" numberStack_FINAL[x+1] = "3567" .... etc
-  Serial.println("OUTPUT: we have this for Z / infixRAWnumberStack simplified " + String(Z) + "    OUTPUT: we have this for individual i.shortstring saved " + String(i));
+  //Serial.println("OUTPUT: we have this for Z / infixRAWnumberStack simplified " + String(Z) + "    OUTPUT: we have this for individual i.shortstring saved " + String(i));
+}
+
+void save_op(int reference_type) {
+  /* 1 = number
+     2 = subtraction
+     3 = addition
+     4 = multiplication
+     5 = division
+     6 = right facing parenthesis (
+     7 = left facing parenthesis )
+     8 = ... EXPONENT ?
+     9? */
+  infix_stack_reference[infix_key_x] = reference_type;
+  infix_key_x++;
 }
 
 void syntax_check(int end_of_string) {
-  //  if (infix_stack_reference[infix_key_x] == infix_stack_reference[infix_key_x - 1] ) {
-  //    Serial.println("MAJOR SYNTAX COMPLICATION, YOU HAVE A DOUBLE OPERATOR SOMEWHERE");
-  //    //here you would write some abort code, or tell the user that the code has an extra operator
-  //    abort(); NOT NECESSARY HERE, THIS IS NOT THE OPTIMAL PLACE TO CODE. ALREADY IMPLEMENTED DURING PROCCHAR INDEXING. DEBUNKED
-  //  }
-  Serial.println("so we have end of string " + String(end_of_string));
   if (end_of_string == (strlen(infixstring) - 1)) {
     openparenth_count != 0 ? abort() : calculate_postfix();
-    Serial.println("so we didnt abort either? NICE");
+    //Serial.println(F("so we didnt abort either? NICE"));
   }
 }
 
@@ -393,160 +503,182 @@ void calculate_postfix() {
     infix_key_x++;
     if ( i == 1 ) {
       copy(numberrepeat, 1);
-      numberrepeat++;
       /* we know that the infix notation expression will always end with a 1,
         so by piggybacking on that predictable ending, we can tie together
-        a final check to see if its actually the end of the string*/
-      if ( infix_stack_reference[infix_key_x + 1] == 0 ) { // WARNING!!!!!!!!!!!!!!!!! this code might potentially be problematic if we have infix expressions that end in parenthesis.
-        //======== Operator Stack Popping Code
-        for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-          int opr8tr = postfix_opstack[p];
-          if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
-            copy(numberrepeat, opr8tr);
-            numberrepeat++;
-          }
-        }
-        //=====================
-      }
+        a final check to see if its actually the end of the string */
+      //      if ( infix_stack_reference[infix_key_x + 1] == 0 ) { // WARNING!!!!!!!!!!!!!!!!! this code might potentially be problematic if we have infix expressions that end in parenthesis.
+      //             ======== Operator Stack Popping Code
+      //                for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
+      //                  int opr8tr = postfix_opstack[p];
+      //                  if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
+      //                    copy(numberrepeat, opr8tr);
+      //                  }
+      //                }
+      //              =====================
+      //      }
     } // end of if i == 1 so anything below this checkes for other types of reference numbers. *ie operators or modifier characters.
     if ( i == 2 || i == 3 ) {
       pushtostack(2, i);
     } else if ( i == 4 || i == 5 ) {
       pushtostack(3, i);
     } else if ( i == 6 ) {
-      pushtostack(6, i);
+      pushtostack(255, i);
+    } else if ( i == 7) {
+      pushtostack(255, i);
+    } else if ( i == 8) {
+      pushtostack(4, i);
     }
-    for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-      Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
+  }
+
+  /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack and pushtostack() exits */
+  /*for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
+    Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
+    }*/
+
+}
+
+void print_opstack() {
+  /*
+    delay(50);
+    Serial.print("Opstack is : ");
+    for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
+    Serial.print(String(postfix_opstack[i]));
+    }Serial.println("");
+    delay(50);  */
+}
+
+void copy(byte location, byte input ) {
+  postfix_stack_reference[location] = input;
+  numberrepeat++;
+}
+
+void pushtostack(byte precedence, int opr8tr) {
+  print_opstack();
+  //Serial.println("pushtostack() DEBUG: precedence: " + String(precedence) + " operator value: " + String(opr8tr));
+  //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
+  for ( int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
+
+    if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
+      postfix_opstack[p] = opr8tr;
+      //      //Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
+      //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '
+    } else if ((precedence != 255) && (opr8tr < postfix_opstack[p] && postfix_opstack[p] != 6) || ( (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
+      /* CODE EXPLANATION -
+        So first, we initialize a local temp variable to store the value of the fualty operator
+        then we copy that temp variable to the postfix reference stack (ie. "popping" the stack)
+        Finally, the variable in that spot "postfix_opstack[p]" is replaced with the new opr8ter given to us by the "input". (pushtostack(precedence, input oper8ter))
+        precedence is needed to generalize our input oper8tr and compare it to the actual operators already present in the opstack */
+      int selected_oper8tr_in_opstack = postfix_opstack[p];
+      copy(numberrepeat, selected_oper8tr_in_opstack);
+      postfix_opstack[p] = opr8tr;
+      for ( int loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(int)); loc ++ ) postfix_opstack[loc] = 0;
+    } else if ((opr8tr != 7 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
+      postfix_opstack[ p + 1 ] = opr8tr;
+      break;
+    } else if ((opr8tr != 7 && opr8tr == 8 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0))  {
+      postfix_opstack[ p + 1 ] = opr8tr;
+      break;
+    } else if ((opr8tr != 7 && opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
+      postfix_opstack[ p + 1 ] = opr8tr;
+      break;
+    } else if (precedence == 255 && opr8tr == 7) {
+      if (postfix_opstack[p] != 0) {
+        //Serial.println("Checking the operator in the postfix_opstack[" + String(p) + "]   " + "we have : " + String(postfix_opstack[p]));
+        int operator_2b_popped = postfix_opstack[p];
+        postfix_opstack[p] = 0;
+        if (operator_2b_popped != 6) {
+          //          delay(100);
+          //Serial.println("=======POPPED OPERATOR========= : " + String(operator_2b_popped));
+          copy(numberrepeat, operator_2b_popped);
+        } else break;
+      }
     }
   }
 }
-  void copy(byte location, byte input ) {
-    postfix_stack_reference[location] = input;
-  }
 
-  void pushtostack(byte precedence, int opr8tr) {
-    //  Serial.println("precedence: " + String(precedence) + " operator value: " + String(opr8tr));
-    //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
-    for ( int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-      if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
-        postfix_opstack[p] = opr8tr;
-        //      Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
-        //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '
-      } else if ((opr8tr != 6 && precedence != 6) && (opr8tr < postfix_opstack[p]) || (opr8tr == postfix_opstack[p] || (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
-        int prev_opr8tr = postfix_opstack[p];
-        copy(numberrepeat, prev_opr8tr);
-        numberrepeat++;
-        postfix_opstack[p] = opr8tr;
-        for ( int loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(int)); loc ++ ) postfix_opstack[loc] = 0;
-      } else if (opr8tr > postfix_opstack[p] && postfix_opstack[p] != 0)  {
-        postfix_opstack[ p + 1 ] = opr8tr;
-        break;
-      }
+void perform_operation(int input_operator, int pos) {
+  int numberstack_index = -1;
+  //Serial.println(delete_ones);
+  for (int z = pos; z >= 0; z--) {
+    if ( postfix_stack_reference[z] == 1 ) {
+      numberstack_index++;
+      //Serial.println("# of 1's detected when backprinting" + String(numberstack_index));
+    }
+  } numberstack_index -= delete_ones;
+  if (input_operator == 2) {
+    //Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " SUBRACTION");
+    numberStack_FINAL[numberstack_index - 1] -= numberStack_FINAL[numberstack_index];
+    //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
+    bring_stack_down(numberstack_index);
+    //print_numberstack();
+  }
+  if (input_operator == 3) {
+    //Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " ADDITION");
+    numberStack_FINAL[numberstack_index - 1] += numberStack_FINAL[numberstack_index];
+    //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
+    bring_stack_down(numberstack_index);
+    //print_numberstack();
+  }
+  //  if (input_operator == 8) numberstack_FINAL[numberstack_index - 1] = numberstack_FINAL[numberstack_index - 1 ] exp numberstack_FINAL[numerstack_index];
+  if (input_operator == 4) {
+    //Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " MULTIPLYING");
+    numberStack_FINAL[numberstack_index - 1] *= numberStack_FINAL[numberstack_index];
+    //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
+    bring_stack_down(numberstack_index);
+    //print_numberstack();
+  }
+  if (input_operator == 5) {
+    //Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " DIVIDING");
+    numberStack_FINAL[numberstack_index - 1] /= numberStack_FINAL[numberstack_index];
+    //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
+    bring_stack_down(numberstack_index);
+    //print_numberstack();
+  }
+  if (input_operator == 8) {
+    //Serial.println("first operand: " + String(numberStack_FINAL[numberstack_index - 1]) + " second operand: " + String(numberStack_FINAL[numberstack_index]) + " EXPONENTIATION");
+    numberStack_FINAL[numberstack_index - 1] = numberStack_FINAL[numberstack_index - 1].pow(numberStack_FINAL[numberstack_index]);
+    //Serial.println("result" + String(numberStack_FINAL[numberstack_index - 1]));
+    bring_stack_down(numberstack_index);
+    //print_numberstack();
+  }
+}
+
+void bring_stack_down(int pop_at_this_x) {
+  for ( int m = pop_at_this_x ; m < (sizeof(numberStack_FINAL) / (sizeof(BigNumber))); m++) {
+    //Serial.println("pop_at_this_x: " + String(m) + "  (sizeof(numberStack_FINAL/sizeof(BigNumber)):  " + String((sizeof(numberStack_FINAL) / (sizeof(BigNumber)))));
+    //Serial.println("numberStack_FINAL[m]: " + String(numberStack_FINAL[m]) + " numberStack_FINAL[m + 1]: " + String(numberStack_FINAL[m + 1]));
+    numberStack_FINAL[m] = numberStack_FINAL[m + 1];
+  }
+  delete_ones++;
+}
+
+void print_numberstack() {
+  Serial.print("Numberstack: ");
+  for ( int t = 0; t < (sizeof(numberStack_FINAL) / sizeof(BigNumber)); t++) {
+    Serial.print(String(numberStack_FINAL[t]) + " ");
+  } Serial.println(" ");
+}
+
+
+void evaluate_postfix() {
+  //Serial.println("WE GOT IN TO EVALUATING POSTFIX");
+  //boolean had_a_number = false;
+  //print_numberstack();
+  for ( int p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p++ ) {
+    int value = postfix_stack_reference[p];
+    //Serial.println("Position on Reference Stack : " + String(p) + "  Value: " + String(value));
+    //value == 1 ? had_a_number = true : had_a_number == had_a_number;
+    if (value > 1) {
+      //Serial.println("Value greater than 1 at position: " + String(p));
+      perform_operation(value, p);
+      //had_a_number = false;
     }
   }
 
-  void evaluate_postfix(int p) {
-    for ( int p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p++ ) {
-      int number_index;
-      int value = postfix_stack_reference[p];
-      value == 1 ? number_index++ : number_index == number_index;
-      //    value > 1 ? placeholder(DELETE THIS IT WONT COMPILE) : EXCEPTION();
-    }
-  }
+  Serial.print("Finished Processing, we got result approximate : ");
+  Serial.println(numberStack_FINAL[0]);
+  //    print_numberstack();
 
-  void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double w, double h, double xlo, double xhi, double xinc, double ylo, double yhi, double yinc, String title, String xlabel, String ylabel, unsigned int gcolor, unsigned int acolor, unsigned int pcolor, unsigned int tcolor, unsigned int bcolor, boolean & redraw) {
-
-    double ydiv, xdiv;
-    // initialize old x and old y in order to draw the first point of the graph
-    // but save the transformed value
-    // note my transform funcition is the same as the map function, except the map uses long and we need doubles
-    //static double ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
-    //static double oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-    double i;
-    double temp;
-    int rot, newrot;
-
-    if (redraw == true) {
-
-      redraw = false;
-      ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
-      oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-      // draw y scale
-      for ( i = ylo; i <= yhi; i += yinc) {
-        // compute the transform
-        temp =  (i - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-
-        if (i == 0) {
-          d.drawLine(gx, temp, gx + w, temp, acolor);
-        }
-        else {
-          d.drawLine(gx, temp, gx + w, temp, gcolor);
-        }
-
-        d.setTextSize(1);
-        d.setTextColor(tcolor, bcolor);
-        d.setCursor(gx - 40, temp);
-        // precision is default Arduino--this could really use some format control
-        d.println(i);
-      }
-      // draw x scale
-      for (i = xlo; i <= xhi; i += xinc) {
-
-        // compute the transform
-
-        temp =  (i - xlo) * ( w) / (xhi - xlo) + gx;
-        if (i == 0) {
-          d.drawLine(temp, gy, temp, gy - h, acolor);
-        }
-        else {
-          d.drawLine(temp, gy, temp, gy - h, gcolor);
-        }
-
-        d.setTextSize(1);
-        d.setTextColor(tcolor, bcolor);
-        d.setCursor(temp, gy + 10);
-        // precision is default Arduino--this could really use some format control
-        d.println(i);
-      }
-
-      //now draw the labels
-      d.setTextSize(2);
-      d.setTextColor(tcolor, bcolor);
-      d.setCursor(gx , gy - h - 30);
-      d.println(title);
-
-      d.setTextSize(1);
-      d.setTextColor(acolor, bcolor);
-      d.setCursor(gx , gy + 20);
-      d.println(xlabel);
-
-      d.setTextSize(1);
-      d.setTextColor(acolor, bcolor);
-      d.setCursor(gx - 30, gy - h - 10);
-      d.println(ylabel);
-
-
-    }
-
-    //graph drawn now plot the data
-    // the entire plotting code are these few lines...
-    // recall that ox and oy are initialized as static above
-    x =  (x - xlo) * ( w) / (xhi - xlo) + gx;
-    y =  (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-    d.drawLine(ox, oy, x, y, pcolor);
-    d.drawLine(ox, oy + 1, x, y + 1, pcolor);
-    d.drawLine(ox, oy - 1, x, y - 1, pcolor);
-    ox = x;
-    oy = y;
-
-  }
-
-  /*
-    End of graphing functioin
-  */
-
-
-
+}
 
 

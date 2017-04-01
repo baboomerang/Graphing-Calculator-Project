@@ -1,7 +1,7 @@
 #include <MemoryFree.h>
 
 #include "BigNumber.h"
-#include "math.h"
+#include <math.h>
 
 //input / cin variables
 char byteChar;
@@ -63,7 +63,7 @@ void infixdataPull() {
   if (Serial.available() > 0) { //make sure serial is open Cin
     int incomingByte = Serial.read();
     byteChar = char(incomingByte);
-    byteChar != 'g' ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
+    (byteChar != 'g' && byteChar != 'c') ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
     infX += 1;
     //=============== INFIXPARSER ========
     infixproc();                       // it will loop infixproc infinitely. infixproc will continue with its own subroutines once the character "g" is detected.
@@ -72,7 +72,8 @@ void infixdataPull() {
 } // end of serial data pull
 
 void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but arduino for some absurd reason, does not have C++ STDL so I had to manually code it in
-  if (byteChar == 'g') {
+  byteChar == 'c' ?
+  else if (byteChar == 'g') {
     unsigned int start = 0;
     unsigned int cutHere = 0;
     infixstring[strlen(infixstring)] = ')';
@@ -249,18 +250,18 @@ void calculate_postfix() {
   /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack and pushtostack() exits */
   /*for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
     Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
-  }*/
+    }*/
 
 }
 
 void print_opstack() {
   /*
-  delay(50);
-  Serial.print("Opstack is : ");
-  for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
-   Serial.print(String(postfix_opstack[i]));
-  }Serial.println("");
-  delay(50);  */
+    delay(50);
+    Serial.print("Opstack is : ");
+    for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
+    Serial.print(String(postfix_opstack[i]));
+    }Serial.println("");
+    delay(50);  */
 }
 
 void copy(byte location, byte input ) {
@@ -368,13 +369,13 @@ void bring_stack_down(int pop_at_this_x) {
   delete_ones++;
 }
 
-/*void print_numberstack() {
+void print_numberstack() {
   Serial.print("Numberstack: ");
   for ( int t = 0; t < (sizeof(numberStack_FINAL) / sizeof(BigNumber)); t++) {
     Serial.print(String(numberStack_FINAL[t]) + " ");
   } Serial.println(" ");
 }
-*/
+
 
 void evaluate_postfix() {
   //Serial.println("WE GOT IN TO EVALUATING POSTFIX");
@@ -390,13 +391,9 @@ void evaluate_postfix() {
       //had_a_number = false;
     }
   }
-  
-  if ( numberStack_FINAL[1] != 0 ) {
-   Serial.println("OPERATOR SYNTAX ERROR: insufficient or superfluous operator(s) in the reference stack");
-   } else { 
-     Serial.print("Finished Processing, we got result approximate : ");
-     Serial.println(numberStack_FINAL[0]);
-    //print_numberstack();
-  }
-  
+
+  Serial.print("Finished Processing, we got result approximate : ");
+  Serial.println(numberStack_FINAL[0]);
+  //    print_numberstack();
+
 }
