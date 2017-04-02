@@ -63,7 +63,7 @@ void infixdataPull() {
   if (Serial.available() > 0) { //make sure serial is open Cin
     int incomingByte = Serial.read();
     byteChar = char(incomingByte);
-    (byteChar != 'g' && byteChar != 'c') ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
+    (byteChar != '=' && byteChar != 'C') ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
     infX += 1;
     //=============== INFIXPARSER ========
     infixproc();                       // it will loop infixproc infinitely. infixproc will continue with its own subroutines once the character "g" is detected.
@@ -72,8 +72,10 @@ void infixdataPull() {
 } // end of serial data pull
 
 void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but arduino for some absurd reason, does not have C++ STDL so I had to manually code it in
-  byteChar == 'c' ?
-  else if (byteChar == 'g') {
+  if ( byteChar == 'C') {
+    free(numberStack_FINAL);
+    Serial.println("CLEARING NUMBERSTACK FINAL");
+  } else if (byteChar == '=') {
     unsigned int start = 0;
     unsigned int cutHere = 0;
     infixstring[strlen(infixstring)] = ')';
