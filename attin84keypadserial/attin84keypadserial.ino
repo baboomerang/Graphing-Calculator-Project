@@ -14,17 +14,18 @@
 
 #include <Keypad.h>
 #include "SoftwareSerial.h" //softwareserial
-#include <Bounce2.h>
+#include <LEDFader.h>
+#include <Curve.h>
 
-#define BUTTON_PIN_ADD 8
-#define BUTTON_PIN_SUBTRACT 7
+#define STATUS_LED 7
+#define TRANSMIT_LED 8
 
 
 // ADD PINS HERE FOR DIVISION AND SUBTRACTION
 
 const int Rx = 10; // this is physical pin 2
 const int Tx = 9; // this is physical pin 3
-// const int led = 7;
+//const int led = 7;
 
 SoftwareSerial tinySerial(Rx, Tx);
 const byte ROWS = 4; //four rows
@@ -40,68 +41,20 @@ byte colPins[COLS] = {2, 1, 0}; //connect to the column pinouts of the kpd
 
 Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
-int oldaddvalue = LOW;
-int oldsubvalue = LOW;
-
-Bounce debouncer = Bounce(); // debouncer object
-Bounce debouncer2 = Bounce(); // debouncer object
-
 void setup() {
   tinySerial.begin(9600);
   pinMode(Rx, INPUT);
   pinMode(Tx, OUTPUT);
-  pinMode(led, OUTPUT);
-  pinMode(BUTTON_PIN_ADD, INPUT_PULLUP);
-  pinMode(BUTTON_PIN_SUBTRACT, INPUT_PULLUP);
-  debouncer.attach(BUTTON_PIN_ADD);
-  debouncer2.attach(BUTTON_PIN_SUBTRACT);
-  debouncer.interval(10); // interval in ms
-  debouncer2.interval(10);
+  pinMode(STATUS_LED, OUTPUT);
+  pinMode(TRANSMIT_LED, OUTPUT);
 }
 
 void loop() {
-
-  debouncer2.update();
-  debouncer.update();
-  add_debounce();
-  sub_debounce();
-
-  int value2 = debouncer2.read();
-  int value = debouncer.read();
-
   char keypressed = kpd.getKey();
   if (keypressed) {
     tinySerial.write(keypressed);
+    digitalWrite(TRANSMIT_LED, LOW);
   }
-
-//   digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)             // wait for a second
-
+  digitalWrite(STATUS_LED, HIGH);   // turn the LED on (HIGH is the voltage level)
 }  // End loop
 
-void add_debounce() {
-  // Update the Bounce instance :
-  debouncer.update();
-  // Get the updated value :
-  int value = debouncer.read();
-  if (value != oldaddvalue) { // if the current read was the same as before, dont do any of this other code until it changes
-    if ( value == LOW ) {
-    } else {
-      tinySerial.write(43);
-    }
-  } // end of the (IF value is != old value )
-  oldaddvalue = value;
-} // end ============================================================================
-
-void sub_debounce() {
-  // Update the Bounce instance :
-  debouncer2.update();
-  // Get the updated value :
-  int value2 = debouncer2.read();
-  if (value2 != oldsubvalue) { // if the current read was the same as before, dont do any of this other code until it changes
-    if ( value2 == LOW ) {
-    } else {
-      tinySerial.write(45);
-    }
-  } // end of the (IF value is != old value )
-  oldsubvalue = value2;
-} // end ============================================================================

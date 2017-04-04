@@ -21,18 +21,24 @@
 #define LED_PIN 9
 #define INPUT_PIN 10
 #define ERROR_PIN 11
-#define SPECIAL_PIN 12
+#define SPECIAL_PIN 3
 
 //
 //const byte LEFTPARENTH_PIN = 14;
 //const byte RIGHTPARENTH_PIN = 15;
 //const byte GRAPH_PIN = 16;
 
-float brightness = 0;
-float fadeAmount = 0.01;
-bool isBusy = false;
+//float brightness = 0;
+//float fadeAmount = 0.01;
 
+bool isBusy = false;
+bool isError = false;
+bool isSpecial = false;
+
+LEDFader power_led = LEDFader(LED_PIN);
 LEDFader input_led = LEDFader(INPUT_PIN);
+LEDFader special_led = LEDFader(SPECIAL_PIN);
+LEDFader error_led = LEDFader(ERROR_PIN);
 
 // Instantiate a Bounce object
 Bounce debouncer1 = Bounce();
@@ -80,15 +86,19 @@ void setup() {
   debouncer8.interval(5); // interval in ms
 
   pinMode(INPUT_PIN, OUTPUT);
+  pinMode(ERROR_PIN, OUTPUT);
+  pinMode(SPECIAL_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
 
-
-  //  input_led.fade(255, 500);
 }
 
 void loop() {
-  fadeLED(LED_PIN);
-  if (isBusy) new_fadeLED();
+  //  fadeLED(LED_PIN);
+  new_fadeLED(power_led, 5000, 3000);
+
+  if (isBusy) new_fadeLED(input_led, 27, 70); else digitalWrite(INPUT_PIN, LOW);
+  if (isError) new_fadeLED(error_led, 13, 971); else digitalWrite(ERROR_PIN, LOW);
+  if (isSpecial) new_fadeLED(special_led, 251, 1562); else digitalWrite(SPECIAL_PIN, LOW);
 
   // Update the Bounce instances :
   debouncer1.update();
@@ -110,18 +120,13 @@ void loop() {
   int value7 = debouncer7.read();
   int value8 = debouncer8.read();
 
-  //  Serial.print(value6);
-  //  Serial.print("value6        ");
-  //  Serial.print(value7);
-  //  Serial.println("  value7");
-
   if (value1) {
     if (debouncer1.rose()) {
       Serial.write(byte('+'));
     }
+    isBusy = true;
     bool ledState = HIGH;
     digitalWrite(INPUT_PIN, ledState);
-    isBusy = true;
   } else if (debouncer1.fell()) {
     bool ledState = LOW;
     digitalWrite(INPUT_PIN, ledState);
@@ -131,8 +136,8 @@ void loop() {
     if (debouncer2.rose()) {
       Serial.write(byte('-'));
     }
-    bool ledState = HIGH;
     isBusy = false;
+    bool ledState = HIGH;
     digitalWrite(INPUT_PIN, ledState);
   } else if (debouncer2.fell()) {
     bool ledState = LOW;
@@ -143,6 +148,7 @@ void loop() {
     if (debouncer3.rose()) {
       Serial.write(byte('*'));
     }
+    isError = true;
     bool ledState = HIGH;
     digitalWrite(INPUT_PIN, ledState);
   } else if (debouncer3.fell()) {
@@ -154,6 +160,7 @@ void loop() {
     if (debouncer4.rose()) {
       Serial.write(byte('/'));
     }
+    isError = false;
     bool ledState = HIGH;
     digitalWrite(INPUT_PIN, ledState);
   } else if (debouncer4.fell()) {
@@ -165,6 +172,7 @@ void loop() {
     if (debouncer5.rose()) {
       Serial.write(byte('^'));
     }
+    isSpecial = true;
     bool ledState = HIGH;
     digitalWrite(INPUT_PIN, ledState);
   } else if (debouncer5.fell()) {
@@ -176,6 +184,7 @@ void loop() {
     if (debouncer6.rose()) {
       Serial.write(byte('('));
     }
+    isSpecial = false;
     bool ledState = HIGH;
     digitalWrite(INPUT_PIN, ledState);
   } else if (debouncer6.fell()) {
@@ -194,6 +203,17 @@ void loop() {
     digitalWrite(INPUT_PIN, ledState);
   }
 
+  // THIS KEY WILL BE THE (ENTER) EQUIVALENT FOR THE MEGA
+  // WHEN THIS KEY IS TRIGGERED, TOGGLE ISBUSY UNTIL THE MEGA RETURNS A COMPLETED VALUE
+  // IF THE MEGA DOESNT, OR A WATCHDOG TIMER OCCURS, SAVE A VALUE TO EEPROM ABOUT THE ERROR, THEN ON REBOOT, WRITE IT FORM THE MEGA TO THIS CHIP
+
+
+  /* to do:
+      enter equivalent
+      toggle isbusy
+      check for returned status value
+      response to returned value
+  */
   if (value8) {
     if (debouncer8.rose()) {
       Serial.write(byte('g'));
@@ -207,26 +227,24 @@ void loop() {
 
 }
 
-void fadeLED(byte pin) {
-  brightness += fadeAmount;
-  analogWrite(pin, brightness);
-  if (brightness <= 0 || brightness >= 230) {
-    fadeAmount = -fadeAmount;
-  }
-}
+//void fadeLED(byte pin) {
+//  brightness += fadeAmount;
+//  analogWrite(pin, brightness);
+//  if (brightness <= 0 || brightness >= 230) {
+//    fadeAmount = -fadeAmount;
+//  }
+//}
 
-void new_fadeLED() {
-  input_led.update();
-
-  if (input_led.is_fading() == false) {
-
+void new_fadeLED(LEDFader &led, double lighttime, double fadetime) {
+  led.update();
+  if (led.is_fading() == false) {
     // Fade from 255 - 0
-    if (input_led.get_value() == 255) {
-      input_led.fade(0, 25);
+    if (led.get_value() == 255) {
+      led.fade(0, fadetime);
     }
     // Fade from 0 - 255
     else {
-      input_led.fade(255, 80);
+      led.fade(255, lighttime);
     }
   }
 }
