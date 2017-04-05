@@ -253,6 +253,17 @@ void graph_Setup(double inputX, double inputY, double Plotfreq, double Xmin, dou
   for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
     //    inputY = inputX * inputX + 6 * inputX - 9;
     inputY = tan(abs((inputX - 6) * (inputX - 9)));
+    /*method for future
+    have calculate_postfix() and evaluate_postfix() here, but you know they wont exactly run.
+    I think we have to run the infixproc, which gets constantly detected by inserting byteChar G everytime we loop.
+    to update the X, we have to pass a reference within this function to the other function and have it loop under.
+    
+   byteChar = 'g';
+    
+    hopefully, infixproc will detect that and run the whole code again on the infix string.
+    We might have to break out of the loop for evaluate_postfix();
+    
+    */
     //    inputY = 20 * sin(inputX);
     Graph(tft, inputX, inputY, Xcorner, Ycorner, 420, 260, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
   }
@@ -397,7 +408,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           save_op(7); // this line IS VERY ORDER SENSITIVE, DO NOT CHANGE THE ORDER OTHERWISE STUFF BREAKS. THIS LINE HAS TO BE HERE
           if (openparenth_count == 0) {
             //Serial.println(F("PARENTH LOGIC DEBUG: PARENTH COUNT IS 0"));
-            syntax_check(i); //=================================================== as a terrible design choice, this whole program continues by calling the syntax check soubroutine
+            END_OF_PREPROCESSING_START_EVALUATING(i); //=================================================== as a terrible design choice, this whole program continues by calling the syntax check soubroutine
           }
           break;
         case '^':
@@ -502,7 +513,8 @@ void save_op(int reference_type) {
   infix_key_x++;
 }
 
-void syntax_check(int end_of_string) {
+void END_OF_STRING_START_EVALUATING(int end_of_string) {
+  //checks every closing parenthesis if its the end of the string. If it is the final parenthesis at the end of the string, check for unbalanced parenthesis.
   if (end_of_string == (strlen(infixstring) - 1)) {
     openparenth_count != 0 ? abort() : calculate_postfix();
     //Serial.println(F("so we didnt abort either? NICE"));
@@ -691,7 +703,6 @@ void evaluate_postfix() {
   Serial.print("Finished Processing, we got result approximate : ");
   Serial.println(numberStack_FINAL[0]);
   //    print_numberstack();
-
 }
 
 
