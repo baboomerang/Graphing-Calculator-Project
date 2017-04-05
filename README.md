@@ -34,6 +34,9 @@ RobTillaart for Arduino Code
   
 Jeremy Gillick for LED FADER CODE
   https://github.com/jgillick/arduino-LEDFader
+ 
+MCUdude for providing board definitions on non-standard Arduino Chips
+  https://github.com/MCUdude/MightyCore and https://github.com/MCUdude/MiniCore
 
 # Code Explanation
 
