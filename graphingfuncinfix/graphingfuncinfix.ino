@@ -210,9 +210,9 @@ void loop() {
     int inByte = Serial1.read();
     Serial.println("WE HAVE FOR SERIAL 1: " + String(inByte) + " " + char(inByte));
   }
-  if (Serial.available()) {
+  if (Serial2.available()) {
     int inByte = Serial.read();
-    Serial.println("WE HAVE FOR SERIAL 0: " + String(inByte) + " " + char(inByte));
+    Serial.println("WE HAVE FOR SERIAL 2: " + String(inByte) + " " + char(inByte));
   }
   infixdataPull();
 }
