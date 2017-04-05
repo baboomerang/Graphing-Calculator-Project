@@ -30,25 +30,27 @@ Credits to Code Authors:
 
 Kris Kasprzak for Graphing Code
 
-####RobTillaart 
+#### RobTillaart 
 for Arduino Code
 
   https://github.com/RobTillaart
   
-####Jeremy Gillick 
+#### Jeremy Gillick 
 for LED Fader Code
 
   https://github.com/jgillick/arduino-LEDFader
  
-####MCUdude
+#### MCUdude
 for providing board definitions on non-standard Arduino Chips
 
   https://github.com/MCUdude/MightyCore and https://github.com/MCUdude/MiniCore
   
-#####SainSmart Manufacturer 
+##### SainSmart Manufacturer 
 for providing the library in handling the 20x4 LCD
 
 # Code Explanation
+
+##### Global Variables
 
 First, parsing mathematical expressions in an efficient manner is quite difficult unless you have a pre-processing algorithm. (that works for all the operators possible in a scientific calculator)
 
