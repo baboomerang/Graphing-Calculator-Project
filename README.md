@@ -1,12 +1,11 @@
 # Graphing-Calculator-Project
-Graphing Calculator Project as a Replacement for The Ti-84
-This is designed utilizing multiple libraries for keypad, lcd, graphics and button debouncing.
-Ti-84's are expensive as heck and I figured it couldn't be too hard to replicate functionality.
-I guess I was wrong.....
+This project is to serve as an alternative calculator to the infamous Ti-84
 
-Graphing Calculator made with multiple atmel AVR chips and display.
+## Installation
 
-# Materials
+Provide code examples and explanations of how to get the project.
+
+## Materials
 3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D x 1
 
 ATMEL ATTINY84-20PU 8-BIT 20MHz MCU (2 PACK) x 1
@@ -24,11 +23,11 @@ CO-RODE Tact Button Switch 6x6x5mm Pack of 100
 SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3 x 1
 
 
-# Project Author(s)
+## Project Author(s)
 
 Ilan Rodriguez
 
-##### Credits to Code Authors:
+# Additional Credits to Library Authors:
 
 ###### Kris Kasprzak for Graphing Code
 
@@ -72,3 +71,7 @@ First, infixstring[300] is initialized as a global array. As we recieve characte
 The first value in the infix string is a Left Parenthesis. '('
 
 Lets say we add in a 
+
+## License
+
+A short snippet describing the license (MIT, Apache, etc.)
