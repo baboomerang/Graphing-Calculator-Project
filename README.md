@@ -50,20 +50,20 @@ Kris Kasprzak for Graphing Code
 
 ##### Global Variables
 
-`char infixRAWnumberStack[300];
+`char infixRAWnumberStack[300];`
 
-char infixstring[300]; // infix string buffer from serial input
+`char infixstring[300]; // infix string buffer from serial input`
 
 
-byte infix_stack_reference[200]; 
+`byte infix_stack_reference[200]; `
 
-byte postfix_stack_reference[200]; 
+`byte postfix_stack_reference[200]; `
 
-//byte postfix_stack_copy[100];
+`//byte postfix_stack_copy[100];`
 
-byte postfix_opstack[50]; 
+`byte postfix_opstack[50]; `
 
-BigNumber numberStack_FINAL[50];`
+`BigNumber numberStack_FINAL[50];`
 
 
 http://www.oxfordmathcenter.com/drupal7/node/628
