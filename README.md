@@ -9,15 +9,15 @@ Ilan Rodriguez
 
 ======
 
-## Motivation
+### Motivation
 I needed a calculator earlier in my senior high school year, so I decided to build one from scratch. However, it took significantly longer than expected thus by the time I finished I didn't actually need it. It's still cool to have nonetheless. Plus, making a calculator at this level really exercises my programming and planning skills.
 
-## Installation
+### Installation
 
 Use a Sparkfun TinyAVR Programmer or some other type of programmer and install the *attiny84keypadserial.ino* onto an Atmel Attiny 84 
 Then install the *bounce2buttonsatmega328p.ino* onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip)
 
-## Materials
+### Materials
 3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D x 1
 
 ATMEL ATTINY84-20PU 8-BIT 20MHz MCU (2 PACK) x 1
@@ -35,7 +35,7 @@ CO-RODE Tact Button Switch 6x6x5mm Pack of 100
 SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3 x 1
 
 
-# Additional Credits to Library Authors:
+## Additional Credits to Library Authors:
 
 ###### Kris Kasprzak for Graphing Code
 
@@ -53,7 +53,7 @@ SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3
   
 ###### SainSmart Manufacturer for providing the library in handling the 20x4 LCD
 
-# Code Explanation
+## Code Explanation
 
 ##### Global Variables
 Given Equation:  3 + 4 * 2 / (1 - 5) ^ 2 ^ 3
