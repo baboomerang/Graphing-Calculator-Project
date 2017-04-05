@@ -28,9 +28,9 @@ SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3
 
 Ilan Rodriguez
 
-Credits to Code Authors: 
+###### Credits to Code Authors: 
 
-Kris Kasprzak for Graphing Code
+#### Kris Kasprzak for Graphing Code
 
 #### RobTillaart for Arduino Code
 
