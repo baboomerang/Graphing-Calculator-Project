@@ -1,9 +1,17 @@
 # Graphing-Calculator-Project
-This project is to serve as an alternative calculator to the infamous Ti-84
+This project is to serve as an alternative calculator to the infamous Texas Instruments Ti-84 Graphing Calculator. It runs multiple Atmel AVR chips to process inputs, perform calculations and then drive the actual display. There is a multiplexed keypad along with 8 debounced buttons for serial input. An Attiny84 sends keypad input along with an Atmega328p to the Arduino Mega 2560. The ARduino Mega uses that information to perform operations and graph functions similar to how a Ti-84 would do it. (Not quite, but similar). There are status LED's implemented for visual debug and aesthetic.
+
+###_ Project Author(s)
+
+Ilan Rodriguez
+
+
+## Motivation
+I needed a calculator earlier in my senior high school year, so I decided to build one. However, it took significantly longer than expected thus I don't actually need it, but it's still cool to have nonetheless. Plus, making a calculator at this level really exercises programming and planning skills .
 
 ## Installation
 
-Provide code examples and explanations of how to get the project.
+Use a Sparkfun TinyAVR Programmer or some other type of programmer and install the *attiny84keypadserial.ino* onto an Atmel Attiny 84 
 
 ## Materials
 3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D x 1
@@ -22,10 +30,6 @@ CO-RODE Tact Button Switch 6x6x5mm Pack of 100
 
 SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3 x 1
 
-
-## Project Author(s)
-
-Ilan Rodriguez
 
 # Additional Credits to Library Authors:
 
@@ -48,29 +52,24 @@ Ilan Rodriguez
 # Code Explanation
 
 ##### Global Variables
+Given Equation:  3 + 4 * 2 / (1 - 5) ^ 2 ^ 3
 
-`char infixRAWnumberStack[300];`
+`char infixRAWnumberStack[300];` - 300 element 2-D Array that holds all the numbers 3 4 2 1 5 2 3 in order.
 
-`char infixstring[300]; // infix string buffer from serial input`
+`char infixstring[300]; /` - Another 300 element 2-D Array that buffers the infix string. "3+4*2/(1-5)^2^3"
 
-`byte infix_stack_reference[200]; `
+`byte infix_stack_reference[200]; ` - Holds an indexed version of the input infix string for easier processing
 
-`byte postfix_stack_reference[200]; `
+`byte postfix_stack_reference[200]; ` Holds an indexed version of the output postfix string
 
-`byte postfix_opstack[50]; `
+`byte postfix_opstack[50]; ` Holds the operators read from the infix stack
 
-`BigNumber numberStack_FINAL[50];`
+`BigNumber numberStack_FINAL[50];` Holds the actual numbers in which operations are performed on.
 
-
-
-http://www.oxfordmathcenter.com/drupal7/node/628
-
-https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
 First, infixstring[300] is initialized as a global array. As we recieve characters from serial, they get appended on in a L-R fashion.
 The first value in the infix string is a Left Parenthesis. '('
 
-Lets say we add in a 
 
 ## License
 
