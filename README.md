@@ -1,5 +1,5 @@
 # Graphing-Calculator-Project
-This project is to serve as an alternative calculator to the infamous Texas Instruments Ti-84 Graphing Calculator. It runs multiple Atmel AVR chips to process inputs, perform calculations and then drive the actual display. There is a multiplexed keypad along with 8 debounced buttons for serial input. An Attiny84 sends keypad input along with an Atmega328p to the Arduino Mega 2560. The ARduino Mega uses that information to perform operations and graph functions similar to how a Ti-84 would do it. (Not quite, but similar). There are status LED's implemented for visual debug and aesthetic.
+This project is to serve as an alternative calculator to the infamous Texas Instruments Ti-84 Graphing Calculator. It runs multiple Atmel AVR chips to process inputs, perform calculations and then drive the actual display. There is a multiplexed keypad along with 8 debounced buttons for serial input. An Attiny84 sends keypad input along with an Atmega328p to the Arduino Mega 2560. The Arduino Mega uses that information to perform operations and graph functions similar to how a Ti-84 would do it. (Not quite, but similar). There are status LED's implemented for visual debug and aesthetic.
 
 ### Project Author(s)
 =====
@@ -8,11 +8,12 @@ Ilan Rodriguez
 
 =====
 ## Motivation
-I needed a calculator earlier in my senior high school year, so I decided to build one. However, it took significantly longer than expected thus I don't actually need it, but it's still cool to have nonetheless. Plus, making a calculator at this level really exercises programming and planning skills .
+I needed a calculator earlier in my senior high school year, so I decided to build one from scratch. However, it took significantly longer than expected thus by the time I finished I didn't actually need it. It's still cool to have nonetheless. Plus, making a calculator at this level really exercises my programming and planning skills.
 
 ## Installation
 
 Use a Sparkfun TinyAVR Programmer or some other type of programmer and install the *attiny84keypadserial.ino* onto an Atmel Attiny 84 
+Then install the *bounce2buttonsatmega328p.ino* onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip)
 
 ## Materials
 3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D x 1
