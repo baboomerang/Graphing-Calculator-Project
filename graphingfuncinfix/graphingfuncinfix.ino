@@ -161,14 +161,17 @@ bool active_parenth = false;
 
 void setup() {
   Serial.begin(9600);
+  Serial1.begin(9600);
+  Serial2.begin(9600);
   pinMode(ADJ_PIN, INPUT);
   tft.begin(HX8357D);
   tft.fillScreen(BLACK);
+
   BigNumber::begin();  //                                           THIS IS WHERE THE BIGNUMBER LIBRARY BEGINS
   BigNumber::setScale(20);
   infixstring[0] = '(';
   infX = 1;
-  Serial.begin(9600);
+
   //  tft.setRotation(2);
   //  a1 = 3.354016E-03 ;
   //  b1 = 2.569850E-04 ;
@@ -179,7 +182,7 @@ void setup() {
   BigNumber x, y;
 
   tft.setRotation(1);
-  graph_Setup(x, y, 0.7, -80, 80, 10, -80, 80, 10, "tan(abs((inputX - 6)*(inputX - 9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
+  graph_Setup(x, y, 0.0123, -10, 15, 1, -10, 15, 1, "tan(abs((inputX - 6)*(inputX - 9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
   //
   //
   //  for (x = -60; x <= 60; x += 1) {
@@ -203,6 +206,14 @@ void setup() {
 }
 
 void loop() {
+  if (Serial1.available()) {
+    int inByte = Serial1.read();
+    Serial.println("WE HAVE FOR SERIAL 1: " + String(inByte) + " " + char(inByte));
+  }
+  if (Serial.available()) {
+    int inByte = Serial.read();
+    Serial.println("WE HAVE FOR SERIAL 0: " + String(inByte) + " " + char(inByte));
+  }
   infixdataPull();
 }
 
@@ -344,8 +355,10 @@ void doNothing(int code) {
 }
 
 void infixdataPull() {
-  if (Serial.available() > 0) { //make sure serial is open Cin
-    int incomingByte = Serial.read();
+  if (Serial1.available() > 0 || Serial2.available() > 0) { //make sure serial is open Cin
+    int incomingByte;
+    if (Serial1.available() > 0 ) incomingByte = Serial1.read();
+    if (Serial2.available() > 0 ) incomingByte = Serial2.read();
     byteChar = char(incomingByte);
     byteChar != 'g' ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
     infX += 1;
