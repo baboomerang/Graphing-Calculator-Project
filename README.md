@@ -4,6 +4,8 @@ This is designed utilizing multiple libraries for keypad, lcd, graphics and butt
 Ti-84's are expensive as heck and I figured it couldn't be too hard to replicate functionality.
 I guess I was wrong.....
 
+Graphing Calculator Re
+
 # Materials
 3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D x 1
 
