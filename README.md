@@ -30,21 +30,21 @@ Ilan Rodriguez
 
 ###### Credits to Code Authors: 
 
-#### Kris Kasprzak for Graphing Code
+###### Kris Kasprzak for Graphing Code
 
-#### RobTillaart for Arduino Code
+###### RobTillaart for Arduino Code
 
   https://github.com/RobTillaart
   
-#### Jeremy Gillick for LED Fader Code
+###### Jeremy Gillick for LED Fader Code
 
   https://github.com/jgillick/arduino-LEDFader
  
-#### MCUdude for providing board definitions on non-standard Arduino Chips
+###### MCUdude for providing board definitions on non-standard Arduino Chips
 
   https://github.com/MCUdude/MightyCore and https://github.com/MCUdude/MiniCore
   
-##### SainSmart Manufacturer for providing the library in handling the 20x4 LCD
+####### SainSmart Manufacturer for providing the library in handling the 20x4 LCD
 
 # Code Explanation
 
