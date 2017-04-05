@@ -56,13 +56,13 @@ SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3
 ##### Global Variables
 Given Equation:  3 + 4 * 2 / (1 - 5) ^ 2 ^ 3
 
-`char infixRAWnumberStack[300];` - 300 element 2-D Array that holds all the numbers 3 4 2 1 5 2 3 in order.
+`char infixRAWnumberStack[300];`  300 element 2-D Array that holds all the numbers 3 4 2 1 5 2 3 in order.
 
-`char infixstring[300]; /` - Another 300 element 2-D Array that buffers the infix string. "3+4*2/(1-5)^2^3"
+`char infixstring[300]; /`  Another 300 element 2-D Array that buffers the infix string. "3+4*2/(1-5)^2^3"
 
-`byte infix_stack_reference[200]; ` - Holds an indexed version of the input infix string for easier processing
+`byte infix_stack_reference[200]; `  Holds an indexed version of the input infix string for easier processing
 
-`byte postfix_stack_reference[200]; ` Holds an indexed version of the output postfix string
+`byte postfix_stack_reference[200];` Holds an indexed version of the output postfix string
 
 `byte postfix_opstack[50]; ` Holds the operators read from the infix stack
 
