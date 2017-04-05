@@ -11,8 +11,10 @@ I needed a calculator earlier in my senior high school year, so I decided to bui
 
 ### Installation
 
-Use a Sparkfun TinyAVR Programmer or some other type of programmer and install the *attiny84keypadserial.ino* onto an Atmel Attiny 84 
-Then install the *bounce2buttonsatmega328p.ino* onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip)
+1. Get a Sparkfun TinyAVR Programmer or some other type of programmer
+2. Install the *attiny84keypadserial.ino* onto an Atmel Attiny 84 
+3. Then install the *bounce2buttonsatmega328p.ino* onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip)
+4. Use *graphingfuncinfix.ino* and install that to the arduino mega2560.
 
 ### Materials
 3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D x 1
@@ -34,16 +36,20 @@ SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3
 
 ## Additional Credits to Library Authors:
 
-###### Kris Kasprzak for Graphing Code
+###### Kris Kasprzak for Graphing Library
 
 ###### RobTillaart for Arduino Code
 
   https://github.com/RobTillaart
   
-###### Jeremy Gillick for LED Fader Code
+###### Jeremy Gillick for LED Fader Library
 
   https://github.com/jgillick/arduino-LEDFader
- 
+  
+###### Nick Gammon for BigNumber Library
+
+  https://github.com/nickgammon/BigNumber
+  
 ###### MCUdude for providing board definitions on non-standard Arduino Chips
 
   https://github.com/MCUdude/MightyCore and https://github.com/MCUdude/MiniCore
@@ -74,5 +80,18 @@ The first value in the infix string is a Left Parenthesis. '('
 
 
 ## License
+    baboomerang/Graphing-Calculator-Project
+    Copyright (C) <2017>  <Ilan Rodriguez>
 
-A short snippet describing the license (MIT, Apache, etc.)
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
