@@ -26,10 +26,12 @@ SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3
 Ilan Rodriguez
 
 Credits to Code Authors: 
+
 Kris Kasprzak for Graphing Code
 
 RobTillaart for Arduino Code
   https://github.com/RobTillaart
+  
 Jeremy Gillick for LED FADER CODE
   https://github.com/jgillick/arduino-LEDFader
 
