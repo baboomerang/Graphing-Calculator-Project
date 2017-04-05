@@ -44,7 +44,7 @@ Ilan Rodriguez
 
   https://github.com/MCUdude/MightyCore and https://github.com/MCUdude/MiniCore
   
-####### SainSmart Manufacturer for providing the library in handling the 20x4 LCD
+###### SainSmart Manufacturer for providing the library in handling the 20x4 LCD
 
 # Code Explanation
 
