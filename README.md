@@ -49,16 +49,16 @@ Kris Kasprzak for Graphing Code
 # Code Explanation
 
 ##### Global Variables
-`//infixnumberstack and the Cin String
-char infixRAWnumberStack[300];  //string of only the numbers together in a linear fashion. (makes it easy for cutting and sorting into the number stack)
+
+`char infixRAWnumberStack[300];
 char infixstring[300]; // infix string buffer from serial input
-//processed stacks of information
-byte infix_stack_reference[200]; // reference key showing INFIX notation of the expression in a simplified view
-byte postfix_stack_reference[200]; // reference key showing POSTFIX notation of the expression in a simplified view
-//byte postfix_stack_copy[100]; // copy of reference stack for processing
-byte postfix_opstack[50]; // a stack used for rearranging operators to get them in PEMDAS order.
-BigNumber numberStack_FINAL[50]; // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
-First, parsing mathematical expressions in an efficient manner is quite difficult unless you have a pre-processing algorithm. (that works for all the operators possible in a scientific calculator)`
+
+byte infix_stack_reference[200]; 
+byte postfix_stack_reference[200]; 
+//byte postfix_stack_copy[100];
+byte postfix_opstack[50]; 
+BigNumber numberStack_FINAL[50];`
+
 
 http://www.oxfordmathcenter.com/drupal7/node/628
 
