@@ -23,6 +23,7 @@ SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3
 
 
 # Project Author(s)
+
 Ilan Rodriguez
 
 Credits to Code Authors: 
@@ -30,12 +31,15 @@ Credits to Code Authors:
 Kris Kasprzak for Graphing Code
 
 RobTillaart for Arduino Code
+
   https://github.com/RobTillaart
   
 Jeremy Gillick for LED FADER CODE
+
   https://github.com/jgillick/arduino-LEDFader
  
 MCUdude for providing board definitions on non-standard Arduino Chips
+
   https://github.com/MCUdude/MightyCore and https://github.com/MCUdude/MiniCore
 
 # Code Explanation
@@ -43,5 +47,6 @@ MCUdude for providing board definitions on non-standard Arduino Chips
 First, parsing mathematical expressions in an efficient manner is quite difficult unless you have a pre-processing algorithm. (that works for all the operators possible in a scientific calculator)
 
 http://www.oxfordmathcenter.com/drupal7/node/628
+
 https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
