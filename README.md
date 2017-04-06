@@ -6,7 +6,7 @@ This project is to serve as an alternative calculator to the infamous Texas Inst
 Ilan Rodriguez
 
 ### Motivation
-I needed a calculator earlier in my senior high school year, so I decided to build one from scratch. However, it took significantly longer than expected. Thus, by the time I finished, I didn't actually need it. It's still cool to have nonetheless. Plus, making a calculator at this level really exercises my programming and planning skills.
+I needed a calculator earlier in my senior high school year, so I decided to build one from scratch. However, it took significantly longer than expected. Thus, by the time I finished, I didn't actually need it. It's still cool to have nonetheless. Plus, making a calculator at this level really exercises my programming and planning skills. Originally, I built BCD Adding Machines
 
 ### Installation
 1. Download and install Software-Serial, Bounce2, TinyCore, MiniCore, BigNumber, LEDFader,
