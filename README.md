@@ -2,7 +2,6 @@
 This project is to serve as an alternative calculator to the infamous Texas Instruments Ti-84 Graphing Calculator. It runs multiple Atmel AVR chips to process inputs, perform calculations and then drive the actual display. There is a multiplexed keypad along with 8 debounced buttons for serial input. An Attiny84 sends keypad input along with an Atmega328p to the Arduino Mega 2560. The Arduino Mega uses that information to perform operations and graph functions similar to how a Ti-84 would do it. (Not quite, but similar). There are status LED's implemented for visual debug and aesthetic.
 
 ### Project Author(s)
-=====================
 
 Ilan Rodriguez
 
@@ -10,11 +9,11 @@ Ilan Rodriguez
 I needed a calculator earlier in my senior high school year, so I decided to build one from scratch. However, it took significantly longer than expected. Thus, by the time I finished, I didn't actually need it. It's still cool to have nonetheless. Plus, making a calculator at this level really exercises my programming and planning skills.
 
 ### Installation
-
-1. Get a Sparkfun TinyAVR Programmer or some other type of programmer
-2. Install the *attiny84keypadserial.ino* onto an Atmel Attiny 84 
-3. Then install the *bounce2buttonsatmega328p.ino* onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip)
-4. Use *graphingfuncinfix.ino* and install that to the arduino mega2560.
+1. Download and install Software-Serial, Bounce2, TinyCore, MiniCore, BigNumber, LEDFader,
+2. Get a Sparkfun TinyAVR Programmer or some other type of programmer
+3. Install the *attiny84keypadserial.ino* onto an Atmel Attiny 84 
+4. Then install the *bounce2buttonsatmega328p.ino* onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip)
+5. Use *graphingfuncinfix.ino* and install that to the arduino mega2560.
 
 ### Materials
 3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D x 1
@@ -37,6 +36,10 @@ SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3
 ## Additional Credits to Library Authors:
 
 ###### Kris Kasprzak for Graphing Library
+
+###### Thomas O. Fredericks for Bounce2 Library
+
+  https://github.com/thomasfredericks/Bounce2
 
 ###### RobTillaart for Arduino Code
 
