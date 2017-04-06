@@ -7,7 +7,11 @@ It runs multiple Atmel AVR chips to process inputs, perform calculations and the
 Ilan Rodriguez
 
 ### Motivation
-I needed a calculator earlier in my senior high school year, so I decided to build one from scratch. However, it took significantly longer than expected. Thus, by the time I finished, I didn't actually need it. It's still cool to have nonetheless. Plus, making a calculator at this level really exercises my programming and planning skills. Originally, I built BCD Full-Adders in minecraft with redstone and mods. Once my computer couldn't run all the block updates that the  decided to build a computer through real-life hardware. However, I do not know enough Computer Engineering design to build a computer from pure logic chips. Building this calculator is indirectly the closest alternative I can do that brings a tangible product as soon as possible.
+I needed a calculator earlier in my senior high school year, so I decided to build one from scratch. However, it took significantly longer than expected. Thus, by the time I finished, I didn't actually need it. It's still cool to have nonetheless. Plus, making a calculator at this level really exercises my programming and planning skills.
+
+  Originally, I built BCD Full-Adders in minecraft with redstone and mods. Once my computer couldn't run all demands of the game at that stage, I decided to build a computer through real-life hardware. However, I do not know enough Computer Engineering design to build a computer from pure logic chips. 
+
+Building this calculator is indirectly the closest alternative I can do that brings a tangible product as soon as possible.
 
 ### Installation
 1. Download and install Software-Serial, Bounce2, TinyCore, MiniCore, BigNumber, LEDFader,
