@@ -42,6 +42,10 @@ I needed a calculator earlier in my senior high school year, so I decided to bui
 
   https://github.com/thomasfredericks/Bounce2
 
+###### Sudar Muthu for MemoryFree Library
+
+  https://github.com/sudar/MemoryFree
+  
 ###### RobTillaart for Arduino Code
 
   https://github.com/RobTillaart
