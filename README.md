@@ -80,7 +80,15 @@ BigNumber numberStack_FINAL[50]; Holds the actual numbers in which operations ar
 ```
 
 First, infixstring[300] is initialized as a global array. As we recieve characters from serial, they get appended on in a L-R fashion.
-The first value in the infix string is a Left Parenthesis. '('
+The first value in the infix string is a Left Parenthesis. '(' and then the inputted expression.
+
+`Recieved infix string: (3+4*2/(1-5)^2^3`
+
+When you want to solve the expression, you send the character 'g' over serial to the mega.
+
+Then the infix expression gets capped with a final closing parenthesis. ' )'
+
+*this will be updated later..... it is alot of code to describe concisely*
 
 
 ## License
