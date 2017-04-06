@@ -14,11 +14,11 @@ I needed a calculator earlier in my senior high school year, so I decided to bui
 Building this calculator is indirectly the closest alternative I can do that brings a tangible product as soon as possible.
 
 ### Installation
-1. Download and install Software-Serial, Bounce2, TinyCore, MiniCore, BigNumber, LEDFader,
-2. Get a Sparkfun TinyAVR Programmer or some other type of programmer
-3. Install the *attiny84keypadserial.ino* onto an Atmel Attiny 84 
-4. Then install the *bounce2buttonsatmega328p.ino* onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip)
-5. Use *graphingfuncinfix.ino* and install that to the arduino mega2560.
+1. Download and install Software-Serial, Bounce2, TinyCore, MiniCore, BigNumber, LEDFader, and MemoryFree Libraries listed below.
+2. Get a Sparkfun TinyAVR Programmer or any other compatible AVR programmer.
+3. Install the [*attiny84keypadserial.ino*](../blob/master/attin84keypadserial/attin84keypadserial.ino) onto an Atmel Attiny 84.
+4. Then install the [*bounce2buttonsatmega328p.ino*](../blob/master/bounce2buttonsatmega328p/bounce2buttonsatmega328p.ino) onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip).
+5. Use [*graphingfuncinfix.ino*](../blob/master/graphingfuncinfix/graphingfuncinfix.ino) and install that to an arduino mega2560.
 
 ### Materials
 *3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D* x 1
@@ -96,7 +96,7 @@ When you want to solve the expression, you send the character 'g' over serial to
 
 Then the infix expression gets capped with a final closing parenthesis. ' )'
 
-*this will be updated later..... it is alot of code to describe concisely*
+*this will be updated later..... there is too much code to be explained...*
 
 
 ## License
