@@ -182,7 +182,7 @@ void setup() {
   BigNumber x, y;
 
   tft.setRotation(1);
-  graph_Setup(x, y, 0.0123, -10, 15, 1, -10, 15, 1, "tan(abs((inputX - 6)*(inputX - 9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
+  graph_Setup(x, y, 0.0001, -1, 15, 1, -10, 15, 2, "tan(abs((X-6)*(X-9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
   //
   //
   //  for (x = -60; x <= 60; x += 1) {
@@ -254,15 +254,15 @@ void graph_Setup(double inputX, double inputY, double Plotfreq, double Xmin, dou
     //    inputY = inputX * inputX + 6 * inputX - 9;
     inputY = tan(abs((inputX - 6) * (inputX - 9)));
     /*method for future
-    have calculate_postfix() and evaluate_postfix() here, but you know they wont exactly run.
-    I think we have to run the infixproc, which gets constantly detected by inserting byteChar G everytime we loop.
-    to update the X, we have to pass a reference within this function to the other function and have it loop under.
-    
-   byteChar = 'g';
-    
-    hopefully, infixproc will detect that and run the whole code again on the infix string.
-    We might have to break out of the loop for evaluate_postfix();
-    
+      have calculate_postfix() and evaluate_postfix() here, but you know they wont exactly run.
+      I think we have to run the infixproc, which gets constantly detected by inserting byteChar G everytime we loop.
+      to update the X, we have to pass a reference within this function to the other function and have it loop under.
+
+      byteChar = 'g';
+
+      hopefully, infixproc will detect that and run the whole code again on the infix string.
+      We might have to break out of the loop for evaluate_postfix();
+
     */
     //    inputY = 20 * sin(inputX);
     Graph(tft, inputX, inputY, Xcorner, Ycorner, 420, 260, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
@@ -408,7 +408,7 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           save_op(7); // this line IS VERY ORDER SENSITIVE, DO NOT CHANGE THE ORDER OTHERWISE STUFF BREAKS. THIS LINE HAS TO BE HERE
           if (openparenth_count == 0) {
             //Serial.println(F("PARENTH LOGIC DEBUG: PARENTH COUNT IS 0"));
-            END_OF_PREPROCESSING_START_EVALUATING(i); //=================================================== as a terrible design choice, this whole program continues by calling the syntax check soubroutine
+            END_OF_STRING_START_EVALUATING(i); //=================================================== as a terrible design choice, this whole program continues by calling the syntax check soubroutine
           }
           break;
         case '^':
