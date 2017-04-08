@@ -98,6 +98,8 @@ Then the infix expression gets capped with a final closing parenthesis. ' )'
 
 *this will be updated later..... there is too much code to be explained...*
 
+## Images
+
 
 ## License
     baboomerang/Graphing-Calculator-Project
