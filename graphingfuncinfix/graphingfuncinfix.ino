@@ -182,7 +182,7 @@ void setup() {
   BigNumber x, y;
 
   tft.setRotation(1);
-  graph_Setup(x, y, 0.0001, -1, 15, 1, -10, 15, 2, "tan(abs((X-6)*(X-9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
+  graph_Setup(x, y, 0.01, -1, 15, 1, -10, 15, 2, "tan(abs((X-6)*(X-9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
   //
   //
   //  for (x = -60; x <= 60; x += 1) {
@@ -206,14 +206,14 @@ void setup() {
 }
 
 void loop() {
-  if (Serial1.available()) {
-    int inByte = Serial1.read();
-    Serial.println("WE HAVE FOR SERIAL 1: " + String(inByte) + " " + char(inByte));
-  }
-  if (Serial2.available()) {
-    int inByte = Serial.read();
-    Serial.println("WE HAVE FOR SERIAL 2: " + String(inByte) + " " + char(inByte));
-  }
+  //  if (Serial1.available()) {
+  //    int inByte = Serial1.read();
+  //    Serial.println("WE HAVE FOR SERIAL 1: " + String(inByte) + " " + char(inByte));
+  //  }
+  //  if (Serial2.available()) {
+  //    int inByte = Serial2.read();
+  //    Serial.println("WE HAVE FOR SERIAL 2: " + String(inByte) + " " + char(inByte));
+  //  }
   infixdataPull();
 }
 
@@ -371,8 +371,9 @@ void infixdataPull() {
     if (Serial1.available() > 0 ) incomingByte = Serial1.read();
     if (Serial2.available() > 0 ) incomingByte = Serial2.read();
     byteChar = char(incomingByte);
-    byteChar != 'g' ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
+    (byteChar != 'g' && byteChar != '=' && byteChar != 'C' && byteChar != 'c') ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
     infX += 1;
+    Serial.println("Recieved infix string: " + String(infixstring));
     //=============== INFIXPARSER ========
     infixproc();                       // it will loop infixproc infinitely. infixproc will continue with its own subroutines once the character "g" is detected.
     //====================================
@@ -380,6 +381,15 @@ void infixdataPull() {
 } // end of serial data pull
 
 void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but arduino for some absurd reason, does not have C++ STDL so I had to manually code it in
+  if (byteChar == 'c' || byteChar == 'C') {
+    memset(infixstring, 0, sizeof(infixstring));
+    infixstring[0] = '(';
+    infX = 1;
+    //    free(infix_stack_reference);
+    //    free(postfix_stack_reference);
+    //    free(postfix_opstack);
+    //    free(numberStack_FINAL);
+  }
   if (byteChar == 'g') {
     unsigned int start = 0;
     unsigned int cutHere = 0;
@@ -515,6 +525,7 @@ void save_op(int reference_type) {
 
 void END_OF_STRING_START_EVALUATING(int end_of_string) {
   //checks every closing parenthesis if its the end of the string. If it is the final parenthesis at the end of the string, check for unbalanced parenthesis.
+  // this parenthesis (  adds 1 to the openparenth count, while ) subtracts 1 from the open parenth count. if at the end of the string this variable isnt 0, then mismatched parenthesis.
   if (end_of_string == (strlen(infixstring) - 1)) {
     openparenth_count != 0 ? abort() : calculate_postfix();
     //Serial.println(F("so we didnt abort either? NICE"));
