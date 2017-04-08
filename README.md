@@ -99,7 +99,7 @@ Then the infix expression gets capped with a final closing parenthesis. ' )'
 *this will be updated later..... there is too much code to be explained...*
 
 ## Images
-
+![img_graph](https://cloud.githubusercontent.com/assets/15847684/24832676/d123fc68-1c82-11e7-9c14-bde2d07e4cc0.jpg)
 
 ## License
     baboomerang/Graphing-Calculator-Project
