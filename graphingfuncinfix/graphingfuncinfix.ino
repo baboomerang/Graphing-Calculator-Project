@@ -55,7 +55,7 @@
 
 #include <SPI.h>
 #include <SD.h>
-#include <math.h>
+#include <Math.h>
 #include "Adafruit_HX8357.h"
 
 
@@ -168,7 +168,7 @@ void setup() {
   tft.fillScreen(BLACK);
 
   BigNumber::begin();  //                                           THIS IS WHERE THE BIGNUMBER LIBRARY BEGINS
-  BigNumber::setScale(20);
+  BigNumber::setScale(40);
   infixstring[0] = '(';
   infX = 1;
 
@@ -207,12 +207,12 @@ void setup() {
 
 void loop() {
   //  if (Serial1.available()) {
-  //    int inByte = Serial1.read();
-  //    Serial.println("WE HAVE FOR SERIAL 1: " + String(inByte) + " " + char(inByte));
+  //    int inbyte = Serial1.read();
+  //    Serial.println("WE HAVE FOR SERIAL 1: " + String(inbyte) + " " + char(inbyte));
   //  }
   //  if (Serial2.available()) {
-  //    int inByte = Serial2.read();
-  //    Serial.println("WE HAVE FOR SERIAL 2: " + String(inByte) + " " + char(inByte));
+  //    int inbyte = Serial2.read();
+  //    Serial.println("WE HAVE FOR SERIAL 2: " + String(inbyte) + " " + char(inbyte));
   //  }
   infixdataPull();
 }
@@ -361,16 +361,17 @@ void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double
   End of graphing functioin
 */
 
-void doNothing(int code) {
+void doNothing(byte code) {
   if (code == 0) active_parenth = false;
 }
 
 void infixdataPull() {
-  if (Serial1.available() > 0 || Serial2.available() > 0) { //make sure serial is open Cin
-    int incomingByte;
-    if (Serial1.available() > 0 ) incomingByte = Serial1.read();
-    if (Serial2.available() > 0 ) incomingByte = Serial2.read();
-    byteChar = char(incomingByte);
+  if (Serial.available() > 0 || Serial1.available() > 0 || Serial2.available() > 0) { //make sure serial is open Cin
+    int incomingbyte;
+    if (Serial.available() > 0 ) incomingbyte = Serial.read();
+    if (Serial1.available() > 0 ) incomingbyte = Serial1.read();
+    if (Serial2.available() > 0 ) incomingbyte = Serial2.read();
+    byteChar = char(incomingbyte);
     (byteChar != 'g' && byteChar != '=' && byteChar != 'C' && byteChar != 'c') ? infixstring[infX] = byteChar : infixstring[infX - 1] = infixstring[infX - 1];
     infX += 1;
     Serial.println("Recieved infix string: " + String(infixstring));
@@ -382,9 +383,9 @@ void infixdataPull() {
 
 void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but arduino for some absurd reason, does not have C++ STDL so I had to manually code it in
   if (byteChar == 'c' || byteChar == 'C') {
-    memset(infixstring, 0, sizeof(infixstring));
     infixstring[0] = '(';
     infX = 1;
+    //find a way to clear these 5 stacks but not de-initialize them from memory
     //    free(infix_stack_reference);
     //    free(postfix_stack_reference);
     //    free(postfix_opstack);
@@ -399,6 +400,10 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
       char procChar = char(infixstring[i]);
       switch (procChar) {
         case '0' ... '9':
+          infixRAWnumberStack[num_x] = procChar;  //  infix string of 345+96-22/7-999 will become rawnumberstack of 34596227999 and depending on the distance between the sequence of numbers to the nearest operator, we can delimit and "cut" each number out of this raw stack like a stencil.
+          num_x += 1;
+          break;
+        case '.':
           infixRAWnumberStack[num_x] = procChar;  //  infix string of 345+96-22/7-999 will become rawnumberstack of 34596227999 and depending on the distance between the sequence of numbers to the nearest operator, we can delimit and "cut" each number out of this raw stack like a stencil.
           num_x += 1;
           break;
@@ -422,65 +427,34 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
           }
           break;
         case '^':
-          //           if (cutHere == num_x) {
-          //             //Serial.println("doubleoperatorerror");
-          //             //Serial.println("aborting.......");
-          //             abort();
-          //           } else {
           cutHere = num_x;
           active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(8);
           start = cutHere;
-          //           }
           break;
         case '-':
-          //           if (cutHere == num_x) {
-          //             //Serial.println("doubleoperatorerror");
-          //             //Serial.println("aborting.......");
-          //             abort();
-          //           } else {
           cutHere = num_x;
           active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(2);
           start = cutHere;
-          //           }
           break;
         case '+':
-          //           if (cutHere == num_x) {
-          //             //Serial.println("doubleoperatorerror");
-          //             //Serial.println("aborting.......");
-          //             abort();
-          //           } else {
           cutHere = num_x;
           active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(3);
           start = cutHere;
-          //           }
           break;
         case '*':
-          //           if (cutHere == num_x) {
-          //             //Serial.println("doubleoperatorerror");
-          //             //Serial.println("aborting.......");
-          //             abort();
-          //           } else {
           cutHere = num_x;
-          //          //Serial.println(F("SAVENUM INVOKED BY MULTIPLICATION"));
           active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(4);
           start = cutHere;
-          //           }
           break;
         case '/':
-          //           if (cutHere == num_x) {
-          //             //Serial.println("doubleoperatorerror");
-          //             //Serial.println("aborting.......");
-          //             abort();
-          //           } else {
           cutHere = num_x;
           active_parenth == false ? save_num(start, cutHere, num_indx) : doNothing(0);
           save_op(5);
           start = cutHere;
-          //           }
           break;
       } // end of switch case
     } // end of for loop
@@ -494,41 +468,99 @@ void infixproc() {  // INFIX PROC DOES EXACTLY WHAT GETLINE DOES IN C++, but ard
   } //end of if character g
 } //end of infixproc
 
-void save_num(int start, int cutpoint, int index_xpos) {
+void save_num(unsigned int start, unsigned int cutpoint, unsigned int index_xpos) {
+  Serial.println("we started savenum");
   save_op(1);
   String Z = String(infixRAWnumberStack);
   String Zshort = Z.substring(start, cutpoint);
+  unsigned int dec_point = Zshort.indexOf('.');
+  BigNumber i;
+  if (dec_point != -1) {
+    Serial.println("got through a decimal number");
+    BigNumber bigdecimal = 0;
+    calculate_decimal(Zshort, dec_point, bigdecimal);
+    i = BigNumber(Zshort.toInt());
+    Serial.println(bigdecimal);
+    i += bigdecimal;
+  } else {
+    Serial.println("got through a non decimal number");
+    i = BigNumber(Zshort.toInt());
+  }
+  numberStack_FINAL[index_xpos] = i;
+  Serial.println(i);
+  Serial.println("fff");
+  num_indx++;
+  //  Zshort.toCharArray(num, Zshort.length());
+  //  for (int we = 0; we < (sizeof(num)) ; we++) {
+  //    Serial.print(num[we]);
+  //  } Serial.println("");
+  //  Serial.println(num);
   //the cutpoint does not include the value at the cutpoint. its an exclusion limit. if we had 97806 and cut point was 4 digits with start 0, we would just get the first 3 (978)
-  BigNumber i = BigNumber(Zshort.toInt());
+  //  BigNumber i = BigNumber(num);
   //  char * s = Zshort;
   //  BigNumber i = s;
   //  free(s);
-  numberStack_FINAL[index_xpos] = i;
-  num_indx++;
   //numberStack_FINAL IS WHERE ALL THE FULL NUMBERS ARE STORED.  numberStack_FINAL[x] = "23223" numberStack_FINAL[x+1] = "3567" .... etc
   //Serial.println("OUTPUT: we have this for Z / infixRAWnumberStack simplified " + String(Z) + "    OUTPUT: we have this for individual i.shortstring saved " + String(i));
 }
+/*Recieved infix string: (3
+  Recieved infix string: (3+
+  Recieved infix string: (3+4
+  Recieved infix string: (3+4.
+  Recieved infix string: (3+4.1
+  Recieved infix string: (3+4.1
+  we started savenum
+  got through a non decimal number
+  fff
+  we started savenum
+  got through a decimal number
+  1
+  divide:  10   portion: 0.10000000000000000000
+  END OF Z
+  0.10000000000000000000
+  fff
+  Recieved infix string: (3+4.1)
+  6131700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  Finished Processing, we got result approximate : 7.10000000000000000000
+  TESTED WORKING CALCULATE_DECIMAL 4/11/2017 11:12 AM
+*/
+BigNumber calculate_decimal (String& o, unsigned int& point, BigNumber& result) {
+  byte power = 0;
+  for (int z = point; z < (o.length() - 1); z++) {
+    power++;
+    Serial.println(power);
+    BigNumber divide = 10;
+    divide = divide.pow(power);
+    BigNumber portion = BigNumber(int(o[z + 1]) - 48) / divide;
+    Serial.print("divide:  ");
+    Serial.print(divide);
+    Serial.print("   portion: ");
+    Serial.println(portion);
+    result += portion;
+  } Serial.println(" END OF Z");
+  return result;
+}
 
-void save_op(int reference_type) {
-  /* 1 = number
-     2 = subtraction
-     3 = addition
-     4 = multiplication
-     5 = division
-     6 = right facing parenthesis (
-     7 = left facing parenthesis )
-     8 = ... EXPONENT ?
-     9? */
+void save_op(byte reference_type) {
+  /* reference_type value range
+    1 = number
+    2 = subtraction
+    3 = addition
+    4 = multiplication
+    5 = division
+    6 = right facing parenthesis (
+    7 = left facing parenthesis )
+    8 = ... EXPONENT ?
+    9? */
   infix_stack_reference[infix_key_x] = reference_type;
   infix_key_x++;
 }
 
-void END_OF_STRING_START_EVALUATING(int end_of_string) {
+void END_OF_STRING_START_EVALUATING(byte end_of_string) {
   //checks every closing parenthesis if its the end of the string. If it is the final parenthesis at the end of the string, check for unbalanced parenthesis.
   // this parenthesis (  adds 1 to the openparenth count, while ) subtracts 1 from the open parenth count. if at the end of the string this variable isnt 0, then mismatched parenthesis.
   if (end_of_string == (strlen(infixstring) - 1)) {
     openparenth_count != 0 ? abort() : calculate_postfix();
-    //Serial.println(F("so we didnt abort either? NICE"));
   }
 }
 
@@ -583,12 +615,12 @@ void print_opstack() {
     delay(50);  */
 }
 
-void copy(byte location, byte input ) {
+void copy(unsigned int location, byte input ) {
   postfix_stack_reference[location] = input;
   numberrepeat++;
 }
 
-void pushtostack(byte precedence, int opr8tr) {
+void pushtostack(byte precedence, byte opr8tr) {
   print_opstack();
   //Serial.println("pushtostack() DEBUG: precedence: " + String(precedence) + " operator value: " + String(opr8tr));
   //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
@@ -633,6 +665,7 @@ void pushtostack(byte precedence, int opr8tr) {
 }
 
 void perform_operation(int input_operator, int pos) {
+  print_numberstack();
   int numberstack_index = -1;
   //Serial.println(delete_ones);
   for (int z = pos; z >= 0; z--) {
@@ -713,7 +746,7 @@ void evaluate_postfix() {
 
   Serial.print("Finished Processing, we got result approximate : ");
   Serial.println(numberStack_FINAL[0]);
-  //    print_numberstack();
+  print_numberstack();
 }
 
 
