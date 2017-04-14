@@ -1,50 +1,64 @@
 #include <MemoryFree.h>
 #include <EEPROM.h>
-
 #include "BigNumber.h"
 #include <Math.h>
 #include <avr/wdt.h>
 #include <avr/sleep.h>
 #include <avr/power.h>
-
 char infxstr[120];          // infix string buffer from serial input
 byte x = 0;                 // infix string X location
 
 // ((3*5325)^7/3412*16)-12+(1555/12-29421)^2      test infix string for code analysis
 
+/* Max Calculation Limit for an Arduino Mega 2560 is near 2^3500
+
+  Finished Processing, we got result approximate for (2^3500):
+
+  40270296195362184428695060755536962442278486893555705688113133546130765870172
+  73715514067215023079321232763583950088951256520435312094180996588953238049534
+  21455502359439932416245276659698167468088937570774479761417692998541764456595
+  94188438488060010278796974460794227800534432965994490221205512053483105615556
+  62969089412405585240430548127843091192984896213610464306783135661095251105384
+  52853054430839857155846105630169165566758950183947324955260740763926892668470
+  39632357424849669268400931224905292291149077056476503662934092443494144027797
+  49666843116254069586985349675197094701615860907639669646919503637652887315356
+  84692199342872936240602328625671612857527958722799557444770545725755417136296
+  13597725564715311987818144011059352965537947290352570094324745683212440797155
+  85249657306610450261856744620561050446305737468395539525707452118792903875893
+  47246867522065584726369942916093728137773105488374703562705889962546268226061
+  54512802132318476069531869703761221257941338277361836197198332730168523252328
+  32105702331094682317528819996876363073536047370469376
+
+  Sketch uses 15676 bytes (6%) of program storage space. Maximum is 253952 bytes.
+  Global variables use 825 bytes (10%) of dynamic memory, leaving 7367 bytes for local variables. Maximum is 8192 bytes.
+
+  Any difference in specs will give you more or less numberspace to deal with.
+*/
+ISR( WDT_vect ) {
+  EEPROM.write(2, 99);
+}
+
 void setup() {
   wdt_disable();
+  watchdogSetup();
   BigNumber::begin();
-  BigNumber::setScale(20);
-  Serial.begin(115200);
-  Serial1.begin(9600);
-  Serial2.begin(9600);
+  BigNumber::setScale(30);
   infxstr[0] = '(';
   x = 1;
+  Serial.begin(115200);
+  Serial1.begin(19200);
+  Serial2.begin(19200);
   byte Evalue = EEPROM.read(2);
   if (Evalue == 99) {
-    Serial.println("OVERFLOW, RECOVERED FROM FATAL CRASH. BE CAREFUL NEXT TIME :)");
-    /*lcd.setCursor(6, 0);
-      lcd.print(F("OVERFLOW"));
-      lcd.setCursor(0, 1);
-      lcd.print(F("Recovered from fatal"));
-      lcd.setCursor(0, 2);
-      lcd.print(F("error, be careful "));
-      lcd.setCursor(0, 3);
-      lcd.print(F("next time! :)"));*/
     EEPROM.write(2, 0);
+    Serial.println("OVERFLOW, RECOVERED FROM FATAL CRASH. BE CAREFUL NEXT TIME :)");
   }
-  watchdogSetup();
 }
 
 //the whole code is nested under infixdataPull();
 void loop() {
-  wdt_reset();
   infixdataPull();
-}
-
-ISR( WDT_vect ) {
-  EEPROM.write(2, 99);
+  wdt_reset();
 }
 
 void watchdogSetup(void) {
@@ -62,7 +76,7 @@ void watchdogSetup(void) {
   // Enter Watchdog Configuration mode:
   WDTCSR |= (1 << WDCE) | (1 << WDE);
   // Set Watchdog settings:
-  WDTCSR = (1 << WDIE) | (1 << WDE) | (1 << WDP3) | (0 << WDP2) | (0 << WDP1) | (0 << WDP0);
+  WDTCSR = (1 << WDIE) | (1 << WDE) | (0 << WDP3) | (1 << WDP2) | (1 << WDP1) | (1 << WDP0);
   sei();
 }
 
@@ -96,16 +110,15 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
     byte postfix_index = 0;                         // postfix reference X location
     byte delete_ones = 0;                           // initialize the offset to 0. everytime we perform an operation where 2 operands join into 1, we increment this number up once and later use as a negative offset to make sure we have a proper location of math done.
 
-    char infixrawnumbersonly[100];                  // string of only the numbers together in a linear fashion. (makes it easy for cutting and sorting into the number stack)
-    byte infix_stack_reference[100];                // reference key showing INFIX notation of the expression in a simplified view
-    byte postfix_stack_reference[100];              // reference key showing POSTFIX notation of the expression in a simplified view
-    byte postfix_opstack[25];                       // a stack used for rearranging operators to get them in PEMDAS order.
-    BigNumber numberStack[25] = 0;                  // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+    char infixrawnumbersonly[150];                  // string of only the numbers together in a linear fashion. (makes it easy for cutting and sorting into the number stack)
+    byte infix_stack_reference[150];                // reference key showing INFIX notation of the expression in a simplified view
+    byte postfix_stack_reference[150];              // reference key showing POSTFIX notation of the expression in a simplified view
+    byte postfix_opstack[40];                       // a stack used for rearranging operators to get them in PEMDAS order.
+    BigNumber numberStack[20] = 0;                  // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
 
     /* Adjust the sizes of these stacks accordingly to your device.
       All these calculations are done quickly and well. However, be mindful about the # of operators
       and minimum # of operands required for proper function of the infix stack and postfix stack.
-
       By the nature of this program, the Arduino UNO (Atmega328p) is physically INCAPABLE of running
       this sketch without running out of RAM. */
 
@@ -121,7 +134,7 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
     memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
     memset(infix_stack_reference, 0, sizeof(infix_stack_reference));
     memset(postfix_stack_reference, 0, sizeof(postfix_stack_reference));
-    memset(numberStack, 0, sizeof(numberStack));
+    //    memset(numberStack, 0, sizeof(numberStack));  //dont enable this line. for some reason this kills the code? gotta love memset sometimes.
     //=============================================================================================================================================================================================================
     for (byte k = 0; k < strlen(istr); k++) {
       char character = char(istr[k]);
@@ -193,18 +206,17 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
     for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(byte)); i++) {
       Serial.print(String(infix_stack_reference[i]));
     } Serial.println("");
-
+    // '(' adds 1 to parenthcount while ')' subs 1. If parenthcount != 0 then it's because of mismatched parenthesis.
     int a = ((sizeof(postfix_stack_reference) - 1) / sizeof(byte));
     int b = ((sizeof(postfix_opstack) - 1) / sizeof(byte));
     int c = ((sizeof(numberStack)) / sizeof(BigNumber));
     if (openparenth_count != 0) doSomething(0); else calculate_postfix( infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, a, b, c );
     evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, a , c);
-
+    memset(numberStack, 0, sizeof(numberStack));
     memset(postfix_opstack, 0, sizeof(postfix_opstack));
     memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
     memset(infix_stack_reference, 0, sizeof(infix_stack_reference));
     memset(postfix_stack_reference, 0, sizeof(postfix_stack_reference));
-    memset(numberStack, 0 , sizeof(numberStack));
   }
 }
 
