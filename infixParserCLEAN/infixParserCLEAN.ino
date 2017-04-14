@@ -1,7 +1,11 @@
 #include <MemoryFree.h>
+#include <EEPROM.h>
 
 #include "BigNumber.h"
 #include <Math.h>
+#include <avr/wdt.h>
+#include <avr/sleep.h>
+#include <avr/power.h>
 
 char infxstr[120];          // infix string buffer from serial input
 byte x = 0;                 // infix string X location
@@ -9,18 +13,57 @@ byte x = 0;                 // infix string X location
 // ((3*5325)^7/3412*16)-12+(1555/12-29421)^2      test infix string for code analysis
 
 void setup() {
+  wdt_disable();
   BigNumber::begin();
-  BigNumber::setScale(12);
-  infxstr[0] = '(';
-  x = 1;
+  BigNumber::setScale(20);
   Serial.begin(115200);
   Serial1.begin(9600);
   Serial2.begin(9600);
+  infxstr[0] = '(';
+  x = 1;
+  byte Evalue = EEPROM.read(2);
+  if (Evalue == 99) {
+    Serial.println("OVERFLOW, RECOVERED FROM FATAL CRASH. BE CAREFUL NEXT TIME :)");
+    /*lcd.setCursor(6, 0);
+      lcd.print(F("OVERFLOW"));
+      lcd.setCursor(0, 1);
+      lcd.print(F("Recovered from fatal"));
+      lcd.setCursor(0, 2);
+      lcd.print(F("error, be careful "));
+      lcd.setCursor(0, 3);
+      lcd.print(F("next time! :)"));*/
+    EEPROM.write(2, 0);
+  }
+  watchdogSetup();
 }
 
 //the whole code is nested under infixdataPull();
 void loop() {
+  wdt_reset();
   infixdataPull();
+}
+
+ISR( WDT_vect ) {
+  EEPROM.write(2, 99);
+}
+
+void watchdogSetup(void) {
+  cli();  // disable all interrupts
+  wdt_reset(); // reset the WDT timer
+  /*
+    WDTCSR configuration:
+    WDIE = 1: Interrupt Enable
+    WDE = 1 :Reset Enable
+    WDP3 = 0 :For 2000ms Time-out
+    WDP2 = 1 :For 2000ms Time-out
+    WDP1 = 1 :For 2000ms Time-out
+    WDP0 = 1 :For 2000ms Time-out
+  */
+  // Enter Watchdog Configuration mode:
+  WDTCSR |= (1 << WDCE) | (1 << WDE);
+  // Set Watchdog settings:
+  WDTCSR = (1 << WDIE) | (1 << WDE) | (1 << WDP3) | (0 << WDP2) | (0 << WDP1) | (0 << WDP0);
+  sei();
 }
 
 void infixdataPull() {
@@ -78,7 +121,7 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
     memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
     memset(infix_stack_reference, 0, sizeof(infix_stack_reference));
     memset(postfix_stack_reference, 0, sizeof(postfix_stack_reference));
-
+    memset(numberStack, 0, sizeof(numberStack));
     //=============================================================================================================================================================================================================
     for (byte k = 0; k < strlen(istr); k++) {
       char character = char(istr[k]);
@@ -150,12 +193,18 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
     for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(byte)); i++) {
       Serial.print(String(infix_stack_reference[i]));
     } Serial.println("");
-    // '(' adds 1 to parenthcount while ')' subs 1. If parenthcount != 0 then it's because of mismatched parenthesis.
+
     int a = ((sizeof(postfix_stack_reference) - 1) / sizeof(byte));
     int b = ((sizeof(postfix_opstack) - 1) / sizeof(byte));
     int c = ((sizeof(numberStack)) / sizeof(BigNumber));
     if (openparenth_count != 0) doSomething(0); else calculate_postfix( infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, a, b, c );
     evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, a , c);
+
+    memset(postfix_opstack, 0, sizeof(postfix_opstack));
+    memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
+    memset(infix_stack_reference, 0, sizeof(infix_stack_reference));
+    memset(postfix_stack_reference, 0, sizeof(postfix_stack_reference));
+    memset(numberStack, 0 , sizeof(numberStack));
   }
 }
 
