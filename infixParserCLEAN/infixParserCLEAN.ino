@@ -39,6 +39,7 @@ void infixdataPull() {
       memset(infxstr, 0, strlen(infxstr));
       infxstr[0] = '(';
       x = 1;
+      Serial.println("Cleared String");
     }
   }
 }
@@ -73,10 +74,11 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
 
     istr[strlen(istr)] = ')';                              // caps the recieved infix string with a ')'
 
+    memset(postfix_opstack, 0, sizeof(postfix_opstack));
     memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
     memset(infix_stack_reference, 0, sizeof(infix_stack_reference));
     memset(postfix_stack_reference, 0, sizeof(postfix_stack_reference));
-    memset(postfix_opstack, 0, sizeof(postfix_opstack));
+
     //=============================================================================================================================================================================================================
     for (byte k = 0; k < strlen(istr); k++) {
       char character = char(istr[k]);
@@ -91,7 +93,7 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
           break;
         case '(':
           openparenth_count += 1;
-          save_to_infix_reference(infix_stack_reference, infix_index, 6);
+          save_to_reference_stack(infix_stack_reference, infix_index, 6);
           break;
         case ')':
           openparenth_count -= 1;
@@ -100,14 +102,14 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
             cut_location = raw_index;
             save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
           }
-          save_to_infix_reference(infix_stack_reference, infix_index, 7);
+          save_to_reference_stack(infix_stack_reference, infix_index, 7);
           break;
         case '^':
           cut_location = raw_index;
           if (next_to_right_parenth  == false) {
             save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
           } else next_to_right_parenth  = false;
-          save_to_infix_reference(infix_stack_reference, infix_index, 8);
+          save_to_reference_stack(infix_stack_reference, infix_index, 8);
           start = cut_location;
           break;
         case '-':
@@ -115,7 +117,7 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
           if (next_to_right_parenth  == false) {
             save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
           } else next_to_right_parenth  = false;
-          save_to_infix_reference(infix_stack_reference, infix_index, 2);
+          save_to_reference_stack(infix_stack_reference, infix_index, 2);
           start = cut_location;
           break;
         case '+':
@@ -123,7 +125,7 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
           if (next_to_right_parenth  == false) {
             save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
           } else next_to_right_parenth  = false;
-          save_to_infix_reference(infix_stack_reference, infix_index, 3);
+          save_to_reference_stack(infix_stack_reference, infix_index, 3);
           start = cut_location;
           break;
         case '*':
@@ -131,7 +133,7 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
           if (next_to_right_parenth  == false) {
             save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
           } else next_to_right_parenth  = false;
-          save_to_infix_reference(infix_stack_reference, infix_index, 4);
+          save_to_reference_stack(infix_stack_reference, infix_index, 4);
           start = cut_location;
           break;
         case '/':
@@ -139,7 +141,7 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
           if (next_to_right_parenth  == false) {
             save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
           } else next_to_right_parenth  = false;
-          save_to_infix_reference(infix_stack_reference, infix_index, 5);
+          save_to_reference_stack(infix_stack_reference, infix_index, 5);
           start = cut_location;
           break;
       }
@@ -148,31 +150,37 @@ void infixproc(char* istr, char* byteChar) {  // INFIX PROC DOES EXACTLY WHAT GE
     for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(byte)); i++) {
       Serial.print(String(infix_stack_reference[i]));
     } Serial.println("");
-    return;
-
-    //    if (openparenth_count != 0) doSomething(0); else calculate_postfix();          // '(' adds 1 to parenthcount while ')' subs 1. If parenthcount != 0 then it's mismatched parenthesis.
-    //    evaluate_postfix();
+    // '(' adds 1 to parenthcount while ')' subs 1. If parenthcount != 0 then it's because of mismatched parenthesis.
+    int a = ((sizeof(postfix_stack_reference) - 1) / sizeof(byte));
+    int b = ((sizeof(postfix_opstack) - 1) / sizeof(byte));
+    int c = ((sizeof(numberStack)) / sizeof(BigNumber));
+    if (openparenth_count != 0) doSomething(0); else calculate_postfix( infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, a, b, c );
+    evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, a , c);
   }
 }
+
+/*  Infix Reference Key
+  value range
+  1 = number
+  2 = subtraction
+  3 = addition
+  4 = multiplication                                       13 - 16 / 25 * ( 123 - 387583 ) + 691 / 9  infix expression
+  5 = division                                             1  2  1 5  1 4 6  1  2    1   7 3  1  5 1   infix reference
+  6 = right facing parenthesis (
+  7 = left facing parenthesis )                            It's easier to manipulate this reference expression compared to the full input string
+  8 = ... EXPONENT ?
+  9?
+*/
+
 
 void doSomething(byte code) {
   //print out errors here, do syntax checking? who the fuck knows....
   Serial.println("we did something");
 }
 
-void save_to_infix_reference(byte infix[], byte& index, byte* value) {
+void save_to_reference_stack(byte infix[], byte& index, byte value) {
   infix[index] = value;
   index++;
-  /*    value range
-    1 = number
-    2 = subtraction
-    3 = addition
-    4 = multiplication                                       13 - 16 / 25 * ( 123 - 387583 ) + 691 / 9  infix expression
-    5 = division                                             1  2  1 5  1 4 6  1  2    1   7 3  1  5 1   infix reference
-    6 = right facing parenthesis (
-    7 = left facing parenthesis )                            It's easier to manipulate this reference expression compared to the full input string
-    8 = ... EXPONENT ?
-    9? */
 }
 
 void save_num(byte infix_stack[], byte& index, char infixRAW[], byte& start, byte& cut_location, BigNumber numberStack[], byte& d) {
@@ -188,296 +196,120 @@ void save_num(byte infix_stack[], byte& index, char infixRAW[], byte& start, byt
   d++;
 }
 
-//            infix_stack_reference[infix_index] = 1;
-//            infix_index++;
-//            char buff[100];
-//            String Z = String(infixrawnumbersonly);
-//            String Zshort = Z.substring(start, cut_location);
-//            Zshort.toCharArray(buff, Zshort.length() + 1);
-//            Serial.println(buff);
-//            BigNumber i = BigNumber(buff);
-//            numberStack[final_index] = i;
-//            final_index++;
+void calculate_postfix(byte i_ref_stack[], byte post[], byte opstack[], byte& pfx, int& a, int& b, int& c) {
+  byte ifx = 0;
+  for ( byte k = 1; k != 0; k = i_ref_stack[ifx] ) {
+    k = i_ref_stack[ifx];
+    ifx++;
+    if ( k == 1 ) save_to_reference_stack(post, pfx, 1);
+    if ( k == 2 || k == 3 ) {
+      pushtostack(2, k, post, opstack, pfx, a, b, c);
+    } else if ( k == 4 || k == 5 ) {
+      pushtostack(3, k, post, opstack, pfx, a, b, c);
+    } else if ( k == 6 ) {
+      pushtostack(255, k, post, opstack, pfx, a, b, c);
+    } else if ( k == 7 ) {
+      pushtostack(255, k, post, opstack, pfx, a, b, c);
+    } else if ( k == 8 ) {
+      pushtostack(4, k, post, opstack, pfx, a, b, c);
+    }
+  }
+  /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack and pushtostack() exits */
+  for ( int p = b; p >= 0 ; p--) {
+    Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(post[p]));
+  }
+}
 
-//void save_inf_reference(byte inf_ref[], byte* i, byte* reference_type) {
-//  /* reference_type value range
-//    1 = number
-//    2 = subtraction
-//    3 = addition
-//    4 = multiplication                                       13 - 16 / 25 * ( 123 - 387583 ) + 691 / 9  infix expression
-//    5 = division                                             1  2  1 5  1 4 6  1  2    1   7 3  1  5 1   infix reference
-//    6 = right facing parenthesis (
-//    7 = left facing parenthesis )                             It's easier to manipulate this reference expression compared to the raw char string
-//    8 = ... EXPONENT ?
-//    9? */
-//  inf_ref[i] = reference_type;
-//  i++;
-//}
+void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack[], byte& pfx, int& a, int& b, int& c) {
+  //  print_opstack();
+  //Serial.println("pushtostack() DEBUG: precedence: " + String(precedence) + " operator value: " + String(opr8tr));
+  //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
+  for ( int p = b ; p >= 0 ; p--) {
 
-//byte operator_process( byte& start, byte& cut, byte& x, bool& parenth, byte& final_index, byte inf[], byte* h, byte* ival) {
-//  cut = x;
-//  if (parenth == false) save_num(start, cut, final_index); else parenth = false;
-//  save_inf_reference(inf, h, ival);
-//  start = cut;
-//}
+    if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
+      postfix_opstack[p] = opr8tr;
+      //      //Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
+      //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '
+    } else if ((precedence != 255) && (opr8tr < postfix_opstack[p] && postfix_opstack[p] != 6) || ( (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
+      /* CODE EXPLANATION -
+        So first, we initialize a local temp variable to store the value of the fualty operator
+        then we copy that temp variable to the postfix reference stack (ie. "popping" the stack)
+        Finally, the variable in that spot "postfix_opstack[p]" is replaced with the new opr8ter given to us by the "input". (pushtostack(precedence, input oper8ter))
+        precedence is needed to generalize our input oper8tr and compare it to the actual operators already present in the opstack */
+      int selected_oper8tr_in_opstack = postfix_opstack[p];
+      save_to_reference_stack(post, pfx, selected_oper8tr_in_opstack);
+      //      copy(numberrepeat, selected_oper8tr_in_opstack);
+      postfix_opstack[p] = opr8tr;
+      for ( int loc = p + 1 ; loc < b; loc ++ ) postfix_opstack[loc] = 0;
+    } else if ((opr8tr != 7 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
+      postfix_opstack[ p + 1 ] = opr8tr;
+      break;
+    } else if ((opr8tr != 7 && opr8tr == 8 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0))  {
+      postfix_opstack[ p + 1 ] = opr8tr;
+      break;
+    } else if ((opr8tr != 7 && opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
+      postfix_opstack[ p + 1 ] = opr8tr;
+      break;
+    } else if (precedence == 255 && opr8tr == 7) {
+      if (postfix_opstack[p] != 0) {
+        //Serial.println("Checking the operator in the postfix_opstack[" + String(p) + "]   " + "we have : " + String(postfix_opstack[p]));
+        int operator_2b_popped = postfix_opstack[p];
+        postfix_opstack[p] = 0;
+        if (operator_2b_popped != 6) {
+          //          delay(100);
+          //Serial.println("=======POPPED OPERATOR========= : " + String(operator_2b_popped));
+          save_to_reference_stack(post, pfx, operator_2b_popped);
+        } else break;
+      }
+    }
+  }
+}
 
-/*
-  Recieved infix string: (123.123*123.123
-  we started savenum
-  got through a decimal number
-  1
-  divide:  10   portion: 0.10000000000000000000
-  2
-  divide:  100   portion: 0.02000000000000000000
-  3
-  divide:  1000   portion: 0.00300000000000000000
-  END OF Z
-  0.12300000000000000000
-  fff
-  we started savenum
-  got through a decimal number
-  1
-  divide:  10   portion: 0.10000000000000000000
-  2
-  divide:  100   portion: 0.02000000000000000000
-  3
-  divide:  1000   portion: 0.00300000000000000000
-  END OF Z
-  0.12300000000000000000
-  fff
-  Recieved infix string: (123.123*123.123)
-  6141700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-  Finished Processing, we got result approximate : 15159.27312900000000000000
 
-  TESTED WORKING CALCULATE_DECIMAL 4/11/2017 11:12 AM
-*/
+void evaluate_postfix(byte post[], BigNumber num_Stack[], byte& offset, int& a, int& c) {
+  for ( int p = 0 ; p <= a ; p++ ) {
+    byte value = post[p];
+    if (value > 1) {
+      perform_operation(value, p, post, num_Stack, offset, c);
+    }
+  }
+  Serial.print("Finished Processing, we got result approximate : ");
+  Serial.println(num_Stack[0]);
+}
 
-//BigNumber strtbigdecimal (String& o, unsigned int& point, BigNumber& result) {
-//  //Serial.println("Saving decimal part of bignum");
-//  byte power = 0;
-//  for (int z = point; z < (o.length() - 1); z++) {
-//    power++;
-//    //Serial.println(power);
-//    BigNumber divide = 10;
-//    divide = divide.pow(power);
-//    BigNumber portion = BigNumber(int(o[z + 1]) - 48) / divide;
-//    //    //Serial.print("divide:  ");
-//    //    //Serial.print(divide);
-//    //    //Serial.print("   portion: ");
-//    //    //Serial.println(portion);
-//    result += portion;
-//  } //Serial.println(" END OF Z");
-//  return result;
-//}
-//
-//BigNumber strtbignum (String& o, unsigned int& point, BigNumber& result) {
-//  //Serial.println("Saving integer part of bignum");
-//  if (point = -1) {
-//    for (int z = 0; z < (o.length()); z++) {
-//      BigNumber divide = 10;
-//      BigNumber portion = BigNumber(int(o[z]) - 48);
-//      //      //Serial.print("divide:  ");
-//      //      //Serial.print(divide);
-//      //      //Serial.print("   portion: ");
-//      //      //Serial.println(portion);
-//      result *= 10;
-//      result += portion;
-//      //      //Serial.print("Result ");
-//      //      //Serial.println(result);
-//    } //Serial.println(" END OF Z");
-//  } else {
-//    for (int z = 0; z < (point - 1); z++) {
-//      BigNumber divide = 10;
-//      BigNumber portion = BigNumber(int(o[z]) - 48);
-//      //      //Serial.print("divide:  ");
-//      //      //Serial.print(divide);
-//      //      //Serial.print("   portion: ");
-//      //      //Serial.println(portion);
-//      result *= 10;
-//      result += portion;
-//      //      //Serial.print("Result ");
-//      //      //Serial.println(result);
-//    } //Serial.println(" END OF Z");
-//  }
-//  return result;
-//}
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//void calculate_postfix(char*infix_stack_reference, byte infx_ref_x) {
-//  infx_ref_x = 0;
-//  for ( int i = 1; i != 0; i = infix_stack_reference[infx_ref_x] ) {
-//    i = infix_stack_reference[infx_ref_x];   // REDUNDANCY CHECK, THIS IS REPETITIVE OF THE ACTION TO PERFORM ON EACH LOOP. ^^^^  sets it twice, make sure this line is needed or not just to simplify code.
-//    infx_ref_x++;
-//    if ( i == 1 ) {
-//      copy(postfx_ref_x, 1);
-//      /* we know that the infix notation expression will always end with a 1,
-//        so by piggybacking on that predictable ending, we can tie together
-//        a final check to see if its actually the end of the string */
-//      //      if ( infix_stack_reference[infx_ref_x + 1] == 0 ) { // WARNING!!!!!!!!!!!!!!!!! this code might potentially be problematic if we have infix expressions that end in parenthesis.
-//      //             ======== Operator Stack Popping Code
-//      //                for (int p = ((sizeof(postfix_opstack) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-//      //                  int opr8tr = postfix_opstack[p];
-//      //                  if ( opr8tr != 0 ) { // this for loop essentially pops the stack from top to the bottom in descending order. if any alignment errors, the != 0 mediates any small calibraton issues
-//      //                    copy(postfx_ref_x, opr8tr);
-//      //                  }
-//      //                }
-//      //              =====================
-//      //      }
-//    } // end of if i == 1 so anything below this checkes for other types of reference numbers. *ie operators or modifier characters.
-//    if ( i == 2 || i == 3 ) {
-//      pushtostack(2, i);
-//    } else if ( i == 4 || i == 5 ) {
-//      pushtostack(3, i);
-//    } else if ( i == 6 ) {
-//      pushtostack(255, i);
-//    } else if ( i == 7) {
-//      pushtostack(255, i);
-//    } else if ( i == 8) {
-//      pushtostack(4, i);
-//    }
-//  }
-//
-//  /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack and pushtostack() exits */
-//  /*for ( int p = ((sizeof(postfix_stack_reference) - 1) / sizeof(int)) ; p >= 0 ; p--) {
-//    //Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postfix_stack_reference[p]));
-//    }*/
-//
-//}
-//
-//void print_opstack() {
-//  delay(50);
-//  //Serial.print("Opstack is : ");
-//  for (int i = 0; ( i < (sizeof(postfix_opstack) / sizeof(int))); i++) {
-//    //Serial.print(String(postfix_opstack[i]));
-//  } //Serial.println("");
-//  delay(50);
-//}
-//
-//void copy(byte & location, byte * input ) {
-//  postfix_stack_reference[location] = input;
-//  postfx_ref_x++;
-//}
-//
-//void pushtostack(byte precedence, byte opr8tr) {
-//  //  print_opstack();
-//  ////Serial.println("pushtostack() DEBUG: precedence: " + String(precedence) + " operator value: " + String(opr8tr));
-//  //some funky stuff with checking p = 1 and it wont override it at all due to some funky stuff. Any value after p == 1 breaks the code chain and dupes the top op code for some stupid reason. go fix that bro
-//  for ( byte p = ((sizeof(postfix_opstack) - 1) / sizeof(byte)) ; p >= 0 ; p--) {
-//
-//    if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
-//      postfix_opstack[p] = opr8tr;
-//      //      ////Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
-//      //        |        FIRST CONDITION    |    |  ------>  all of the rest is second branch of the OR statement -------------------->                        '                                                                       '
-//    } else if ((precedence != 255) && (opr8tr < postfix_opstack[p] && postfix_opstack[p] != 6) || ( (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
-//      /* CODE EXPLANATION -
-//        So first, we initialize a local temp variable to store the value of the fualty operator
-//        then we copy that temp variable to the postfix reference stack (ie. "popping" the stack)
-//        Finally, the variable in that spot "postfix_opstack[p]" is replaced with the new opr8ter given to us by the "input". (pushtostack(precedence, input oper8ter))
-//        precedence is needed to generalize our input oper8tr and compare it to the actual operators already present in the opstack */
-//      byte selected_oper8tr_in_opstack = postfix_opstack[p];
-//      copy(postfx_ref_x, selected_oper8tr_in_opstack);
-//      postfix_opstack[p] = opr8tr;
-//      for ( byte loc = p + 1 ; loc < ((sizeof(postfix_opstack) - 1) / sizeof(byte)); loc ++ ) postfix_opstack[loc] = 0;
-//    } else if ((opr8tr != 7 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
-//      postfix_opstack[ p + 1 ] = opr8tr;
-//      break;
-//    } else if ((opr8tr != 7 && opr8tr == 8 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0))  {
-//      postfix_opstack[ p + 1 ] = opr8tr;
-//      break;
-//    } else if ((opr8tr != 7 && opr8tr <= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] == 6))  {
-//      postfix_opstack[ p + 1 ] = opr8tr;
-//      break;
-//    } else if (precedence == 255 && opr8tr == 7) {
-//      if (postfix_opstack[p] != 0) {
-//        ////Serial.println("Checking the operator in the postfix_opstack[" + String(p) + "]   " + "we have : " + String(postfix_opstack[p]));
-//        byte operator_2b_popped = postfix_opstack[p];
-//        postfix_opstack[p] = 0;
-//        if (operator_2b_popped != 6) {
-//          //          delay(100);
-//          ////Serial.println("=======POPPED OPERATOR========= : " + String(operator_2b_popped));
-//          copy(postfx_ref_x, operator_2b_popped);
-//        } else break;
-//      }
-//    }
-//  }
-//}
-//
-//void perform_operation(byte & input_operator, byte & pos) {
-//  //  print_numberstack();
-//  byte numberstack_index = -1;
-//  ////Serial.println(delete_ones);
-//  for (byte z = pos; z >= 0; z--) {
-//    if ( postfix_stack_reference[z] == 1 ) {
-//      numberstack_index++;
-//      ////Serial.println("# of 1's detected when backprinting" + String(numberstack_index));
-//    }
-//  } numberstack_index -= delete_ones;
-//  if (input_operator == 2) {
-//    ////Serial.println("first operand: " + String(numberStack[numberstack_index - 1]) + " second operand: " + String(numberStack[numberstack_index]) + " SUBRACTION");
-//    numberStack[numberstack_index - 1] -= numberStack[numberstack_index];
-//    ////Serial.println("result" + String(numberStack[numberstack_index - 1]));
-//    bring_stack_down(numberstack_index);
-//    //print_numberstack();
-//  }
-//  if (input_operator == 3) {
-//    ////Serial.println("first operand: " + String(numberStack[numberstack_index - 1]) + " second operand: " + String(numberStack[numberstack_index]) + " ADDITION");
-//    numberStack[numberstack_index - 1] += numberStack[numberstack_index];
-//    ////Serial.println("result" + String(numberStack[numberstack_index - 1]));
-//    bring_stack_down(numberstack_index);
-//    //print_numberstack();
-//  }
-//  //  if (input_operator == 8) numberStack[numberstack_index - 1] = numberStack[numberstack_index - 1 ] exp numberStack[numerstack_index];
-//  if (input_operator == 4) {
-//    ////Serial.println("first operand: " + String(numberStack[numberstack_index - 1]) + " second operand: " + String(numberStack[numberstack_index]) + " MULTIPLYING");
-//    numberStack[numberstack_index - 1] *= numberStack[numberstack_index];
-//    ////Serial.println("result" + String(numberStack[numberstack_index - 1]));
-//    bring_stack_down(numberstack_index);
-//    //print_numberstack();
-//  }
-//  if (input_operator == 5) {
-//    ////Serial.println("first operand: " + String(numberStack[numberstack_index - 1]) + " second operand: " + String(numberStack[numberstack_index]) + " DIVIDING");
-//    numberStack[numberstack_index - 1] /= numberStack[numberstack_index];
-//    ////Serial.println("result" + String(numberStack[numberstack_index - 1]));
-//    bring_stack_down(numberstack_index);
-//    //print_numberstack();
-//  }
-//  if (input_operator == 8) {
-//    ////Serial.println("first operand: " + String(numberStack[numberstack_index - 1]) + " second operand: " + String(numberStack[numberstack_index]) + " EXPONENTIATION");
-//    numberStack[numberstack_index - 1] = numberStack[numberstack_index - 1].pow(numberStack[numberstack_index]);
-//    ////Serial.println("result" + String(numberStack[numberstack_index - 1]));
-//    bring_stack_down(numberstack_index);
-//    //print_numberstack();
-//  }
-//}
-//
-//void bring_stack_down(byte * pop_at_this_x) {
-//  for ( byte m = pop_at_this_x ; m < (sizeof(numberStack) / (sizeof(BigNumber))); m++) {
-//    ////Serial.println("pop_at_this_x: " + String(m) + "  (sizeof(numberStack/sizeof(BigNumber)):  " + String((sizeof(numberStack) / (sizeof(BigNumber)))));
-//    ////Serial.println("numberStack[m]: " + String(numberStack[m]) + " numberStack[m + 1]: " + String(numberStack[m + 1]));
-//    if (m != (sizeof(numberStack) / (sizeof(BigNumber)))) {
-//      numberStack[m] = numberStack[m + 1];
-//    } else numberStack[m] = 0;
-//  }
-//  delete_ones++;
-//}
-//
-////void print_numberstack() {
-////  //Serial.print("Numberstack: ");
-////  for ( int t = 0; t < (sizeof(numberStack) / sizeof(BigNumber)); t++) {
-////    //Serial.print(String(numberStack[t]) + " ");
-////  } //Serial.println(" ");
-////}
-//
-//
-//void evaluate_postfix() {
-//  for ( byte p = 0 ; p <= ((sizeof(postfix_stack_reference) - 1) / sizeof(byte)) ; p++ ) {
-//    byte value = postfix_stack_reference[p];
-//    if (value > 1) {
-//      perform_operation(value, p);
-//    }
-//  }
-//  Serial.print("Finished Processing, we got result approximate : ");
-//  Serial.print("thenumber");
-//  //  Serial.println(numberStack[0]);
-//  //  print_numberstack();
-//}
+void perform_operation(byte & input_operator, int & pos, byte post[], BigNumber num_Stack[], byte& offset, int& c) {
+  byte index = -1;
+  for (int z = pos; z >= 0; z--) {
+    if ( post[z] == 1 ) index++;
+  }
+  index -= offset;
+  if (input_operator == 2) {
+    num_Stack[index - 1] -= num_Stack[index];
+    bring_stack_down(index, num_Stack, offset, c);
+  }
+  if (input_operator == 3) {
+    num_Stack[index - 1] += num_Stack[index];
+    bring_stack_down(index, num_Stack, offset, c);
+  }
+  if (input_operator == 4) {
+    num_Stack[index - 1] *= num_Stack[index];
+    bring_stack_down(index, num_Stack, offset, c);
+  }
+  if (input_operator == 5) {
+    num_Stack[index - 1] /= num_Stack[index];
+    bring_stack_down(index, num_Stack, offset, c);
+  }
+  if (input_operator == 8) {
+    num_Stack[index - 1] = num_Stack[index - 1].pow(num_Stack[index]);
+    bring_stack_down(index, num_Stack, offset, c);
+  }
+}
 
+void bring_stack_down(byte& pop_at_this_x, BigNumber num_Stack[], byte& offset, int& c) {
+  for ( int m = pop_at_this_x ; m < c; m++) {
+    if (m != c) {
+      num_Stack[m] = num_Stack[m + 1];
+    } else num_Stack[m] = 0;
+  }
+  offset++;
+}
