@@ -29,10 +29,15 @@ byte x = 0;                 // infix string X location
   54512802132318476069531869703761221257941338277361836197198332730168523252328
   32105702331094682317528819996876363073536047370469376
 
+  1054 - Total Characters in this number.
+  
   Sketch uses 15676 bytes (6%) of program storage space. Maximum is 253952 bytes.
   Global variables use 825 bytes (10%) of dynamic memory, leaving 7367 bytes for local variables. Maximum is 8192 bytes.
 
   Any difference in specs will give you more or less numberspace to deal with.
+
+  Changing the size of the char and byte arrays below will exponentially affect this upepr calculation limit.
+  You have been warned.
 */
 ISR( WDT_vect ) {
   EEPROM.write(2, 99);

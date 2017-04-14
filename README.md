@@ -14,11 +14,13 @@ I needed a calculator earlier in my senior high school year, so I decided to bui
 Building this calculator is indirectly the closest alternative I can do that brings a tangible product as soon as possible.
 
 ### Installation
+Prerequisite: Knowing how softwareSerial works and how to utilize the SPI pins on the ATTINY84-20PU, ATmega2560-16AU, and ATMEGA328P.
+It would take too long to explain the wiring for a USBTiny ISP. (Learn how to use this first on barebones AVR Chips first)
 1. Download and install Software-Serial, Bounce2, TinyCore, MiniCore, BigNumber, LEDFader, and MemoryFree Libraries listed below.
 2. Get a Sparkfun TinyAVR Programmer or any other compatible AVR programmer.
-3. Install the [*attiny84keypadserial.ino*](../master/attin84keypadserial/attin84keypadserial.ino) onto an Atmel Attiny 84.
-4. Then install the [*bounce2buttonsatmega328p.ino*](../master/bounce2buttonsatmega328p/bounce2buttonsatmega328p.ino) onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip).
-5. Use [*graphingfuncinfix.ino*](../master/graphingfuncinfix/graphingfuncinfix.ino) and install that to an arduino mega2560.
+3. Install the [*attiny84_keypad.ino*](../master/attiny84_keypad/attiny84_keypad.ino) onto an Atmel Attiny 84.
+4. Then install the [*atmega328p_IO.ino*](../master/atmega328p_IO/atmega328p_IO.ino) onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip).
+5. Flash the [*infixCalculator.ino*](../master/infixCalculator/infixCalculator.ino) file as well as [*graphingControl.ino*](../master/infixCalculator/graphingControl.ino) to an arduino mega2560.
 
 ### Materials
 *3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D* x 1
