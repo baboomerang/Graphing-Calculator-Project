@@ -11,11 +11,11 @@ I needed a calculator earlier in my senior high school year, so I decided to bui
 
   Originally, I built BCD Full-Adders in minecraft with redstone and mods. Once my computer couldn't run all demands of the game at that stage, I decided to build a computer through real-life hardware. However, I do not know enough Computer Engineering design to build a computer from pure logic chips. 
 
-Building this calculator is indirectly the closest alternative I can do that brings a tangible product as soon as possible.
+Building this calculator is a closer alternative in that it can be made tangible sooner.
 
 ### Installation
 Prerequisite: Knowing how softwareSerial works and how to utilize the SPI pins on the ATTINY84-20PU, ATmega2560-16AU, and ATMEGA328P.
-It would take too long to explain the wiring for a USBTiny ISP. (Learn how to use this first on barebones AVR Chips first)
+It would take too long to explain the wiring for a USBTiny ISP. (Learn how to use an ISP on some barebones AVR Chips first)
 1. Download and install Software-Serial, Bounce2, TinyCore, MiniCore, BigNumber, LEDFader, and MemoryFree Libraries listed below.
 2. Get a Sparkfun TinyAVR Programmer or any other compatible AVR programmer.
 3. Install the [*attiny84_keypad.ino*](../master/attiny84_keypad/attiny84_keypad.ino) onto an Atmel Attiny 84.
@@ -69,36 +69,6 @@ It would take too long to explain the wiring for a USBTiny ISP. (Learn how to us
   https://github.com/MCUdude/MightyCore and https://github.com/MCUdude/MiniCore
   
 ###### SainSmart Manufacturer for providing the library in handling the 20x4 LCD
-
-## Code Explanation
-
-##### Global Variables
-Given Equation:  3 + 4 * 2 / (1 - 5) ^ 2 ^ 3
-
-``` cpp
-char infixRAWnumberStack[300];  300 element 2-D Array that holds all the numbers 3 4 2 1 5 2 3 in order.
-
-char infixstring[300];  Another 300 element 2-D Array that buffers the infix string. "3+4*2/(1-5)^2^3"
-
-byte infix_stack_reference[200];  Holds an indexed version of the input infix string for easier processing
-
-byte postfix_stack_reference[200]; Holds an indexed version of the output postfix string
-
-byte postfix_opstack[50]; Holds the operators read from the infix stack
-
-BigNumber numberStack_FINAL[50]; Holds the actual numbers in which operations are performed on.
-```
-
-First, infixstring[300] is initialized as a global array. As we recieve characters from serial, they get appended on in a L-R fashion.
-The first value in the infix string is a Left Parenthesis. '(' and then the inputted expression.
-
-`Recieved infix string: (3+4*2/(1-5)^2^3`
-
-When you want to solve the expression, you send the character 'g' over serial to the mega.
-
-Then the infix expression gets capped with a final closing parenthesis. ' )'
-
-*this will be updated later..... there is too much code to be explained...*
 
 ## Images
 ![img_graph](https://cloud.githubusercontent.com/assets/15847684/24832676/d123fc68-1c82-11e7-9c14-bde2d07e4cc0.jpg)
