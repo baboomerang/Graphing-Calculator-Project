@@ -387,22 +387,24 @@ void throwError(byte code) {
         }
 }
 
-void save_to_reference_stack(byte infix[], byte& index, byte value) {
-        infix[index] = value;
+void save_to_reference_stack(byte stack[], byte& index, byte value) {
+        stack[index] = value;
         index++;
 }
 
-void save_num(byte infix_stack[], byte& index, char infixRAW[], byte& start, byte& cut_location, BigNumber numberStack[], byte& d) {
-        infix_stack[index] = 1;
-        index++;
+void save_num(byte infix_stack[], byte& infix_index, char infixRAW[], byte& start, byte& cut_location, BigNumber numberStack[], byte& final_index) {
+        infix_stack[infix_index] = 1;
+        infix_index++;
+
         char buff[200];
         String Z = String(infixRAW);
         String Zshort = Z.substring(start, cut_location);
         Zshort.toCharArray(buff, Zshort.length() + 1);
         Serial.println(buff);
         BigNumber i = BigNumber(buff);
-        numberStack[d] = i;
-        d++;
+
+        numberStack[final_index] = i;
+        final_index++;
 }
 
 void calculate_postfix(byte i_ref_stack[], byte post[], byte opstack[], byte& pfx, const int& a, const int& b, const int& c) {
