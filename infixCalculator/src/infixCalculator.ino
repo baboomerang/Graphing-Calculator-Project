@@ -72,7 +72,43 @@ byte x = 0;                 // infix string X location
 
 Adafruit_HX8357 tft = Adafruit_HX8357(TFT_CS, TFT_DC);       // attach display to object declaration
 
-// ((3*5325)^7/3412*16)-12+(1555/12-29421)^2      test infix string for code analysis
+/*
+   Input Infix Expression and Terminal Output Results
+   ((3*5325)^7/3412*16)-12+(1555/12-29421)^2
+
+   3
+   5325
+   7
+   3412
+   16
+   12                          The numbers are processed and filtered out of the string
+   1555
+   12
+   29421
+   2
+   666141781514172136151217817000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+   infix reference ^  (((#*#)^#/#*#)-#+(#/#-#)^#) check the comments near 'void throwError(byte code)' declaration for instructions on interpreting the infix reference stack
+   postfix_stack_reference[18] =  3
+   postfix_stack_reference[17] =  8
+   postfix_stack_reference[16] =  1
+   postfix_stack_reference[15] =  2
+   postfix_stack_reference[14] =  1
+   postfix_stack_reference[13] =  5
+   postfix_stack_reference[12] =  1
+   postfix_stack_reference[11] =  1
+   postfix_stack_reference[10] =  2
+   postfix_stack_reference[9] =  1
+   postfix_stack_reference[8] =  4
+   postfix_stack_reference[7] =  1
+   postfix_stack_reference[6] =  5
+   postfix_stack_reference[5] =  1
+   postfix_stack_reference[4] =  8
+   postfix_stack_reference[3] =  1
+   postfix_stack_reference[2] =  4
+   postfix_stack_reference[1] =  1
+   postfix_stack_reference[0] =  1
+   Finished Processing, we got result approximate : 1245079343380762145465942456.417651751986453041552689872329
+ */
 
 /* Max Calculation Limit for an Arduino Mega 2560 is near 2^3500
 
@@ -241,6 +277,7 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 save_to_reference_stack(infix_stack_reference, infix_index, 7);
                                 break;
                         case '^':
+                                doubleoperatorcheck(cut_location,raw_index);
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -249,6 +286,7 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '-':
+                                doubleoperatorcheck(cut_location,raw_index);
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -257,6 +295,7 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '+':
+                                doubleoperatorcheck(cut_location,raw_index);
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -265,6 +304,7 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '*':
+                                doubleoperatorcheck(cut_location,raw_index);
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -273,6 +313,7 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '/':
+                                doubleoperatorcheck(cut_location,raw_index);
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -316,15 +357,33 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
    9?
  */
 
+void doubleoperatorcheck(byte& cut_location, byte& raw_index) {
+        /* double operator error check:   cut_location is set to the last raw_index if they are different
+           (for them to be different, it implies you processed some numbers after the last
+           detected operator i.e  1236 + 123; the cut location would have last been 4 and the
+           raw index now 7 )
+           the only circumstance they would be the same when calling an operator is if there was another operator immediately behind it.
+           THUS DOUBLE OPERATOR ERROR :P */
+        if (cut_location==raw_index) {
+                throwError(2);
+                return;
+        }
+}
 
 void throwError(byte code) {
         //print out errors here, do syntax checking? who the fuck knows....
         if (code == 0) {
+                Serial.println("Mismatched Parenthesis");
                 Serial2.write(13);
         }
         if (code == 1) {
+                Serial.println("MEM-HALT Overflow");
                 EEPROM.write(2, 0);
                 Serial2.write(1999);
+        }
+        if (code == 2) {
+                Serial.println("Double Operator Syntax Error");
+                Serial2.write(2000);
         }
 }
 
