@@ -206,6 +206,7 @@ void infixdataPull() {
                 if (input != 'G' && input != 'g' && input != '=' && input != 'C' && input != 'c') {
                         infxstr[x] = input;
                         x++;
+                        Serial.println(infxstr);
                 } else if (input == 'g' || input == 'G') {
                         infxstr[strlen(infxstr)] = ')';                  // caps the recieved infix string with a ')'
                         process_infix_begin_calculation(infxstr, input); // once we press g,
@@ -242,6 +243,8 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
 
                 byte openparenth_count = 0;                //count of how many open parenthesis are in the expression
                 bool next_to_right_parenth = false;        //this checks if theres a closing parenthesis ')' next to the operator. Prevents operators from saving non-existant numbers to the reference stack.
+                bool operator_previously_detected = false;          //this checks if theres an operator immediately behind a right parenthesis or another operator.   '  i.e.  ++  ^/     -)   (^ '
+                bool left_parenth_active = false;
 
                 byte start = 0;
                 byte cut_location = 0;
@@ -256,6 +259,8 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                         char character = char(istr[k]);
                         switch (character) {
                         case '0' ... '9':
+                                operator_previously_detected = false;
+                                left_parenth_active = false;
                                 infixrawnumbersonly[raw_index] = character; //  infix string of 345+96-22/7-999 will become rawnumberstack of 34596227999
                                 raw_index += 1;
                                 break;
@@ -266,8 +271,14 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                         case '(':
                                 openparenth_count += 1;
                                 save_to_reference_stack(infix_stack_reference, infix_index, 6);
+                                left_parenth_active = true;
                                 break;
                         case ')':
+                                left_parenth_active = false;
+                                if (operator_previously_detected == true) {
+                                        throwError(2);
+                                        return;
+                                }
                                 openparenth_count -= 1;
                                 next_to_right_parenth = true;
                                 if ( cut_location != raw_index ) {
@@ -277,7 +288,12 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 save_to_reference_stack(infix_stack_reference, infix_index, 7);
                                 break;
                         case '^':
-                                doubleoperatorcheck(cut_location,raw_index);
+                                if (operator_previously_detected == true || left_parenth_active == true) {
+                                        throwError(2);
+                                        return;
+                                } else {
+                                        operator_previously_detected = true;
+                                }
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -286,7 +302,12 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '-':
-                                doubleoperatorcheck(cut_location,raw_index);
+                                if (operator_previously_detected == true || left_parenth_active == true) {
+                                        throwError(2);
+                                        return;
+                                } else {
+                                        operator_previously_detected = true;
+                                }
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -295,7 +316,12 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '+':
-                                doubleoperatorcheck(cut_location,raw_index);
+                                if (operator_previously_detected == true || left_parenth_active == true) {
+                                        throwError(2);
+                                        return;
+                                } else {
+                                        operator_previously_detected = true;
+                                }
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -304,7 +330,12 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '*':
-                                doubleoperatorcheck(cut_location,raw_index);
+                                if (operator_previously_detected == true || left_parenth_active == true) {
+                                        throwError(2);
+                                        return;
+                                } else {
+                                        operator_previously_detected = true;
+                                }
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -313,7 +344,12 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '/':
-                                doubleoperatorcheck(cut_location,raw_index);
+                                if (operator_previously_detected == true || left_parenth_active == true) {
+                                        throwError(2);
+                                        return;
+                                } else {
+                                        operator_previously_detected = true;
+                                }
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -328,13 +364,18 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                         Serial.print(String(infix_stack_reference[i]));
                 } Serial.println("");
 
-                const int a = ((sizeof(postfix_stack_reference) - 1) / sizeof(byte));
-                const int b = ((sizeof(postfix_opstack) - 1) / sizeof(byte));
-                const int c = ((sizeof(numberStack)) / sizeof(BigNumber));
+                const int sizeofPostfixRef = ((sizeof(postfix_stack_reference) - 1) / sizeof(byte));
+                const int sizeofOpstack = ((sizeof(postfix_opstack) - 1) / sizeof(byte));
+                const int sizeofNumstack = ((sizeof(numberStack)) / sizeof(BigNumber));
 
                 // '(' adds 1 to parenthcount while ')' subs 1. If parenthcount != 0 then it's because of mismatched parenthesis.
-                if (openparenth_count != 0) throwError(0); else calculate_postfix( infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, a, b, c );
-                evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, a, c);
+                if (openparenth_count != 0) {
+                        throwError(0);
+                        return;
+                } else {
+                        calculate_postfix( infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, sizeofOpstack );
+                }
+                evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
 
                 memset(numberStack, 0, sizeof(numberStack));
                 memset(postfix_opstack, 0, sizeof(postfix_opstack));
@@ -357,18 +398,17 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
    9?
  */
 
-void doubleoperatorcheck(byte& cut_location, byte& raw_index) {
-        /* double operator error check:   cut_location is set to the last raw_index if they are different
-           (for them to be different, it implies you processed some numbers after the last
-           detected operator i.e  1236 + 123; the cut location would have last been 4 and the
-           raw index now 7 )
-           the only circumstance they would be the same when calling an operator is if there was another operator immediately behind it.
-           THUS DOUBLE OPERATOR ERROR :P */
-        if (cut_location==raw_index) {
-                throwError(2);
-                return;
-        }
-}
+/*  if (cut_location==raw_index) {
+      throwError(2);
+      return;
+    }*/
+/* double operator error check:   cut_location is set to the last raw_index if they are different
+   (for them to be different, it implies you processed some numbers after the last
+   detected operator i.e  1236 + 123; the cut location would have last been 4 and the
+   raw index now 7 )
+   the only circumstance they would be the same when calling an operator is if there was another operator immediately behind it.
+   THUS DOUBLE OPERATOR ERROR :P */
+//
 
 void throwError(byte code) {
         //print out errors here, do syntax checking? who the fuck knows....
@@ -407,33 +447,33 @@ void save_num(byte infix_stack[], byte& infix_index, char infixRAW[], byte& star
         final_index++;
 }
 
-void calculate_postfix(byte i_ref_stack[], byte post[], byte opstack[], byte& pfx, const int& a, const int& b, const int& c) {
+void calculate_postfix(byte i_ref_stack[], byte postref[], byte opstack[], byte& pfx, const int& sizeofOpstack) {
         byte ifx = 0;
         for ( byte k = 1; k != 0; k = i_ref_stack[ifx] ) {
                 k = i_ref_stack[ifx];
                 ifx++;
-                if ( k == 1 ) save_to_reference_stack(post, pfx, 1);
+                if ( k == 1 ) save_to_reference_stack(postref, pfx, 1);
                 if ( k == 2 || k == 3 ) {
-                        pushtostack(2, k, post, opstack, pfx, a, b, c);
+                        pushtostack(2, k, postref, opstack, pfx, sizeofOpstack);
                 } else if ( k == 4 || k == 5 ) {
-                        pushtostack(3, k, post, opstack, pfx, a, b, c);
+                        pushtostack(3, k, postref, opstack, pfx, sizeofOpstack);
                 } else if ( k == 6 ) {
-                        pushtostack(255, k, post, opstack, pfx, a, b, c);
+                        pushtostack(255, k, postref, opstack, pfx,sizeofOpstack);
                 } else if ( k == 7 ) {
-                        pushtostack(255, k, post, opstack, pfx, a, b, c);
+                        pushtostack(255, k, postref, opstack, pfx, sizeofOpstack);
                 } else if ( k == 8 ) {
-                        pushtostack(4, k, post, opstack, pfx, a, b, c);
+                        pushtostack(4, k, postref, opstack, pfx, sizeofOpstack);
                 }
         }
         /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack and pushtostack() exits */
-        for ( int p = b; p >= 0; p--) {
-                Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(post[p]));
+        for ( int p = sizeofOpstack; p >= 0; p--) {
+                Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postref[p]));
         }
 }
 
-void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack[], byte& pfx, const int& a, const int& b, const int& c) {
+void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack[], byte& pfx, const int& sizeofOpstack) {
         //Serial.println("pushtostack() DEBUG: precedence: " + String(precedence) + " operator value: " + String(opr8tr));
-        for ( int p = b; p >= 0; p--) {
+        for ( int p = sizeofOpstack; p >= 0; p--) {
                 if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
                         postfix_opstack[p] = opr8tr;
                         //      //Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
@@ -446,7 +486,7 @@ void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack
                         int selected_oper8tr_in_opstack = postfix_opstack[p];
                         save_to_reference_stack(post, pfx, selected_oper8tr_in_opstack);
                         postfix_opstack[p] = opr8tr;
-                        for ( int loc = p + 1; loc < b; loc++ ) postfix_opstack[loc] = 0;
+                        for ( int loc = p + 1; loc < sizeofOpstack; loc++ ) postfix_opstack[loc] = 0;
                 } else if ((opr8tr != 7 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
                         postfix_opstack[ p + 1 ] = opr8tr;
                         break;
