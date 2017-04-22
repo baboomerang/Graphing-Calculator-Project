@@ -209,11 +209,11 @@ void infixdataPull() {
                         Serial.println(infxstr);
                 } else if (input == 'g' || input == 'G') {
                         infxstr[strlen(infxstr)] = ')';                  // caps the recieved infix string with a ')'
-                        process_infix_begin_calculation(infxstr, input); // once we press g,
+                        process_infix_begin_calculation(infxstr, input); // once we press g, its like pressing '=' and the system starts to parse the given string.
                 } else if (input == 'c' || input == 'C') {
-                        memset(infxstr, 0, strlen(infxstr));
+                        memset(infxstr, 0, strlen(infxstr));             // sets all the bytes of memory that this string takes up to 0 in the respective address
                         infxstr[0] = '(';
-                        x = 1;
+                        x = 1;                                           // these 3 lines do the same thing that void Setup() would do during initialization
                         Serial.println("Cleared String");
                 }
         }
@@ -241,13 +241,13 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                    By the nature of this program, the Arduino UNO (Atmega328p) is physically INCAPABLE of running
                    this sketch without running out of RAM. */
 
-                byte openparenth_count = 0;                //count of how many open parenthesis are in the expression
-                bool next_to_right_parenth = false;        //this checks if theres a closing parenthesis ')' next to the operator. Prevents operators from saving non-existant numbers to the reference stack.
-                bool operator_previously_detected = false;          //this checks if theres an operator immediately behind a right parenthesis or another operator.   '  i.e.  ++  ^/     -)   (^ '
-                bool left_parenth_active = false;
+                byte openparenth_count = 0;                          // count of how many open parenthesis are in the expression
+                bool next_to_right_parenth = false;                  // this checks if theres a closing parenthesis ')' next to the operator. Prevents operators from saving non-existant numbers to the reference stack.
+                bool operator_previously_detected = false;           // this checks if theres an operator immediately behind a right parenthesis or another operator.   '  i.e.  ++  ^/     -)   (^ '
+                bool left_parenth_active = false;                    // this checks if there's an opening parenthesis '(' right before processing an operator. Prevents operators from saving non existant numbers to the reference stack.
 
-                byte start = 0;
-                byte cut_location = 0;
+                byte start = 0;                                       // used for saving numbers from the infixRaw array. Starting index point on the string
+                byte cut_location = 0;                                // used for saving numbers from the infix raw array. Exclusion-index based cutting. so if we save a number between start of 0 and cutpoint of 4, we only save the first 3 digits.
 
                 memset(postfix_opstack, 0, sizeof(postfix_opstack));
                 memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
@@ -255,59 +255,52 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                 memset(postfix_stack_reference, 0, sizeof(postfix_stack_reference));
                 //    memset(numberStack, 0, sizeof(numberStack));  //dont enable this line. for some reason this kills the code? gotta love memset sometimes.
                 //=============================================================================================================================================================================================================
-                for (byte k = 0; k < strlen(istr); k++) {
+                for (byte k = 0; k < strlen(istr); k++) { // loops till the end of the string (null terminated char array)
                         char character = char(istr[k]);
+                        bool error = false;
                         switch (character) {
                         case '0' ... '9':
-                                operator_previously_detected = false;
-                                left_parenth_active = false;
-                                infixrawnumbersonly[raw_index] = character; //  infix string of 345+96-22/7-999 will become rawnumberstack of 34596227999
-                                raw_index += 1;
+                                operator_previously_detected = false;           //  these 2 lines make sure that any operator-parenthetical syntax checking isn't false positive.
+                                left_parenth_active = false;                    //  having a number inbetween operators and parenthesis is mandatory for proper syntaax. This boolean just helps check when there is an error
+                                infixrawnumbersonly[raw_index] = character;     //  infix string of 345+96-22/7-999 will create a second array 'rawnumberstack' of 34596227999
+                                raw_index += 1;                                 //  index of the infixRAWnumbers array increments everytime we add a number or decimal point to it
                                 break;
                         case '.':
-                                infixrawnumbersonly[raw_index] = character;
-                                raw_index += 1;
+                                infixrawnumbersonly[raw_index] = character;     //  BUGWATCHER: 4/21/2017 : there could be glitches when theres more than one decimal point in a number
+                                raw_index += 1;                                 //  index of the infixRAW array increments everytime we add a number or decimal point to it
                                 break;
                         case '(':
                                 openparenth_count += 1;
-                                save_to_reference_stack(infix_stack_reference, infix_index, 6);
-                                left_parenth_active = true;
+                                save_to_reference_stack(infix_stack_reference, infix_index, 6);   // check the comments below LINE 388 to know what the reference stacks do
+                                left_parenth_active = true;                     // this is a left-opening parenthesis
                                 break;
                         case ')':
-                                left_parenth_active = false;
-                                if (operator_previously_detected == true) {
+                                left_parenth_active = false;                    // left_parenth_active is set to false any time any number is detected. this is to avoid the '( -' incorrect operator use
+                                if (operator_previously_detected == true) {     // if theres an operator right behind this parenthesis without a number inbetween, its a syntax error. (ie ' (25/5+)')
                                         throwError(2);
                                         return;
                                 }
                                 openparenth_count -= 1;
-                                next_to_right_parenth = true;
-                                if ( cut_location != raw_index ) {
-                                        cut_location = raw_index;
+                                next_to_right_parenth = true;                   // this is a right-closing parenthesis
+                                if ( cut_location != raw_index ) {              // if the last detected operator (last updated cut_location) is different from raw index, implies a number is in between the closing parenthesis and that last operator (ie. 345+'3436') cut would be 4 but raw would be 7
+                                        cut_location = raw_index;               // update the cut point to the last detcted location of a number and proceed to save that number 'inbetween' that last operator and this parenthesis
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
                                 }
-                                save_to_reference_stack(infix_stack_reference, infix_index, 7);
+                                save_to_reference_stack(infix_stack_reference, infix_index, 7); // check the comments below LINE 388 to know what the reference stacks do
                                 break;
                         case '^':
-                                if (operator_previously_detected == true || left_parenth_active == true) {
-                                        throwError(2);
-                                        return;
-                                } else {
-                                        operator_previously_detected = true;
-                                }
-                                cut_location = raw_index;
-                                if (next_to_right_parenth  == false) {
+                                error = syntax_check(operator_previously_detected,left_parenth_active); // runs some conditions regarding left parenthesis and operator status, returns true if there is an error, returns false if there is none.
+                                if (error) {return;}                            // if the bool is returned as true, code EXITS process_infix_begin_calculation() on this line and we go back into infixdataPull() for input detection and reentry.
+                                cut_location = raw_index;                       // the new cut location is set to the last updated raw_index position. (remember the raw_index will always be +1 after adding the last character, which is beneficial to the exclusionary limit cutting thing i talked about earlier)
+                                if (next_to_right_parenth  == false) {          // without this check, having any operator next to a ' ) ' would have saved a non-existant number to the reference stack
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
-                                } else next_to_right_parenth = false;
-                                save_to_reference_stack(infix_stack_reference, infix_index, 8);
-                                start = cut_location;
+                                } else next_to_right_parenth = false;           // if it was true, then now its set to false because there is no longer an immediate closing parenthesis ') +'
+                                save_to_reference_stack(infix_stack_reference, infix_index, 8); // check the comments below LINE 388 to know what the reference stacks do
+                                start = cut_location;                           // after saving our number, the starting position to save the next number will be the last detected 'cut_location'   '1234' would be start 0 & cut 5. save the #, then update start to 5 and cut 7 ( dont forget inclusionary start and exclusionary limit behavior )
                                 break;
                         case '-':
-                                if (operator_previously_detected == true || left_parenth_active == true) {
-                                        throwError(2);
-                                        return;
-                                } else {
-                                        operator_previously_detected = true;
-                                }
+                                error = syntax_check(operator_previously_detected,left_parenth_active);
+                                if (error) {return;}
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -316,12 +309,8 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '+':
-                                if (operator_previously_detected == true || left_parenth_active == true) {
-                                        throwError(2);
-                                        return;
-                                } else {
-                                        operator_previously_detected = true;
-                                }
+                                error = syntax_check(operator_previously_detected,left_parenth_active);
+                                if (error) {return;}
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -330,12 +319,8 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '*':
-                                if (operator_previously_detected == true || left_parenth_active == true) {
-                                        throwError(2);
-                                        return;
-                                } else {
-                                        operator_previously_detected = true;
-                                }
+                                error = syntax_check(operator_previously_detected,left_parenth_active);
+                                if (error) {return;}
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -344,12 +329,8 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 start = cut_location;
                                 break;
                         case '/':
-                                if (operator_previously_detected == true || left_parenth_active == true) {
-                                        throwError(2);
-                                        return;
-                                } else {
-                                        operator_previously_detected = true;
-                                }
+                                error = syntax_check(operator_previously_detected,left_parenth_active);
+                                if (error) {return;}
                                 cut_location = raw_index;
                                 if (next_to_right_parenth  == false) {
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
@@ -409,6 +390,16 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
    the only circumstance they would be the same when calling an operator is if there was another operator immediately behind it.
    THUS DOUBLE OPERATOR ERROR :P */
 //
+
+bool syntax_check (bool& operator_previously_detected, bool& left_parenth_active) {
+        if (operator_previously_detected == true || left_parenth_active == true) { // if double operator, ' ++ ^/ */ -/ etc.. halt code and throw an error'
+                throwError(2);
+                return true;
+        } else {
+                operator_previously_detected = true; // if there was no operator immediately behind this one, then this currently detected one will be the new 'previously-detected' moving forward.
+                return false;
+        }
+}
 
 void throwError(byte code) {
         //print out errors here, do syntax checking? who the fuck knows....
