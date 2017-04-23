@@ -65,6 +65,7 @@ boolean display6 = true;
 boolean display7 = true;
 boolean display8 = true;
 boolean display9 = true;
+
 double ox, oy;
 
 char infxstr[120];          // infix string buffer from serial input
@@ -207,9 +208,12 @@ void infixdataPull() {
                         infxstr[x] = input;
                         x++;
                         Serial.println(infxstr);
-                } else if (input == 'g' || input == 'G') {
-                        infxstr[strlen(infxstr)] = ')';                  // caps the recieved infix string with a ')'
-                        process_infix_begin_calculation(infxstr, input); // once we press g, its like pressing '=' and the system starts to parse the given string.
+                } else if (input == '=' || input == '=') {
+                        infxstr[strlen(infxstr)] = ')';                         // caps the recieved infix string with a ')'
+                        process_infix_begin_calculation(infxstr, input, 0);        // once we press =, its like pressing '=' and the system starts to parse the given string.
+                } else if (input == 'g' || input == 'g') {
+                        infxstr[strlen(infxstr)] = ')';                         // caps the recieved infix string with a ')'
+                        process_infix_begin_calculation(infxstr, input, 2);        // once we press g, its like pressing '=' and the system starts to parse the given string.
                 } else if (input == 'c' || input == 'C') {
                         memset(infxstr, 0, strlen(infxstr));             // sets all the bytes of memory that this string takes up to 0 in the respective address
                         infxstr[0] = '(';
@@ -220,8 +224,8 @@ void infixdataPull() {
 }
 
 //This is where the magic begins... and ends.
-void process_infix_begin_calculation(char* istr, char* byteChar) {
-        if (byteChar == 'g' || byteChar == 'G') {
+void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
+        if (byteChar == '=' || byteChar == 'g' || byteChar == 'G') {
 
                 byte final_index = 0;               // saved number array position in order ie. numberStack[3] = "2323212" where final_index = 3
                 byte raw_index = 0;                 // number delimiter based by quantity of integers between each operator. (goes up by 1 every # scanned by proc and set as cutting length to tokenize numbers from the RAWstack)
@@ -265,11 +269,29 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 infixrawnumbersonly[raw_index] = character;     //  infix string of 345+96-22/7-999 will create a second array 'rawnumberstack' of 34596227999
                                 raw_index += 1;                                 //  index of the infixRAWnumbers array increments everytime we add a number or decimal point to it
                                 break;
+                        case 'X':
+                                if ( operator_previously_detected == true ) {   //implies an operator immediately behind this variable. ( 1343 + A )
+                                        numberStack[final_index] = inputX;      //future step, MAKE SURE THIS VALUE IS A POINTER TO THE INPUT X OF BELOW;
+                                        save_to_reference_stack(infix_stack_reference, infix_index, 1);
+                                        operator_previously_detected = false;   //set the previously detected to false to prevent double variable stacking
+                                } else if (operator_previously_detected == false) { //checks to see if there was a number or right closing parenthesis right behind.
+                                        throwError(2);  // double variable error (3+AA)
+                                        return;
+                                }
+                                left_parenth_active = false;
+                                infixrawnumbersonly[raw_index] = character;
+                                raw_index += 1;
+                                break;
                         case '.':
+                                operator_previously_detected = false;   //  these 2 lines make sure that any operator-parenthetical syntax checking isn't false positive.
+                                left_parenth_active = false;            //  having a number inbetween operators and parenthesis is mandatory for proper syntaax. This boolean just helps check when there is an error
                                 infixrawnumbersonly[raw_index] = character;     //  BUGWATCHER: 4/21/2017 : there could be glitches when theres more than one decimal point in a number
                                 raw_index += 1;                                 //  index of the infixRAW array increments everytime we add a number or decimal point to it
                                 break;
                         case '(':
+                                // if ( operator_previously_detected == false && left_parenth_active == false) {   // implies that theres a number or variable right behind the parenthesis (distributive associative property and the shorthand multiplication)
+                                //         save_to_reference_stack(infix_stack_reference,infix_index,4); // 456-34(99+23)   operator_detected is set to false once encountering '34' normally we would add multiplication between that number and the next parenthesis
+                                // }
                                 openparenth_count += 1;
                                 save_to_reference_stack(infix_stack_reference, infix_index, 6);   // check the comments below LINE 388 to know what the reference stacks do
                                 left_parenth_active = true;                     // this is a left-opening parenthesis
@@ -283,7 +305,7 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                                 openparenth_count -= 1;
                                 next_to_right_parenth = true;                   // this is a right-closing parenthesis
                                 if ( cut_location != raw_index ) {              // if the last detected operator (last updated cut_location) is different from raw index, implies a number is in between the closing parenthesis and that last operator (ie. 345+'3436') cut would be 4 but raw would be 7
-                                        cut_location = raw_index;               // update the cut point to the last detcted location of a number and proceed to save that number 'inbetween' that last operator and this parenthesis
+                                        cut_location = raw_index;               // update the cut point to the last detcted location of a number and proceed to save the number 'inbetween' that last operator and this parenthesis
                                         save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
                                 }
                                 save_to_reference_stack(infix_stack_reference, infix_index, 7); // check the comments below LINE 388 to know what the reference stacks do
@@ -354,9 +376,19 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
                         throwError(0);
                         return;
                 } else {
-                        calculate_postfix( infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, sizeofOpstack );
+                        // Warning: these 2 functions have a $#!t-load of nested functions with nested arguments, worst code 2017, ill fix it at some point
+                        calculate_postfix(infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, sizeofOpstack);
+                        if ( mode == 0 ) {
+                                evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
+                        } else if (mode == 2) {
+                                Serial.println("wtf bro");
+                                // for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
+                                //future steps, copy the detected x, into the reference stack, but also save a pointer or reference to it, and constantly reevaluate postfix against each update x
+                                // Graph(tft, inputX, inputY, Xcorner, Ycorner, graphLength, graphHeight, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
+                                // }
+                        }
+
                 }
-                evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
 
                 memset(numberStack, 0, sizeof(numberStack));
                 memset(postfix_opstack, 0, sizeof(postfix_opstack));
@@ -373,8 +405,8 @@ void process_infix_begin_calculation(char* istr, char* byteChar) {
    3 = addition
    4 = multiplication                                       13 - 16 / 25 * ( 123 - 387583 ) + 691 / 9  infix expression
    5 = division                                             1  2  1 5  1 4 6  1  2    1   7 3  1  5 1   infix reference
-   6 = right facing parenthesis (
-   7 = left facing parenthesis )                            It's easier to manipulate this reference expression compared to the full input string
+   6 = left opening parenthesis (
+   7 = right closing parenthesis )                            It's easier to manipulate this reference expression compared to the full input string
    8 = ... EXPONENT ?
    9?
  */
@@ -406,15 +438,18 @@ void throwError(byte code) {
         if (code == 0) {
                 Serial.println("Mismatched Parenthesis");
                 Serial2.write(13);
+                return;
         }
         if (code == 1) {
                 Serial.println("MEM-HALT Overflow");
                 EEPROM.write(2, 0);
                 Serial2.write(1999);
+                return;
         }
         if (code == 2) {
                 Serial.println("Double Operator Syntax Error");
                 Serial2.write(2000);
+                return;
         }
 }
 
@@ -424,8 +459,10 @@ void save_to_reference_stack(byte stack[], byte& index, byte value) {
 }
 
 void save_num(byte infix_stack[], byte& infix_index, char infixRAW[], byte& start, byte& cut_location, BigNumber numberStack[], byte& final_index) {
-        infix_stack[infix_index] = 1;
-        infix_index++;
+
+        save_to_reference_stack(infix_stack, infix_index, 1);                   // since we are saving a number, we should add a 1 to the reference stack, indicating a #.
+        // infix_stack[infix_index] = 1;
+        // infix_index++;
 
         char buff[200];
         String Z = String(infixRAW);
@@ -502,18 +539,18 @@ void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack
 }
 
 
-void evaluate_postfix(byte post[], BigNumber num_Stack[], byte& offset,  const int& a, const int& c) {
-        for ( int p = 0; p <= a; p++ ) {
+void evaluate_postfix(byte post[], BigNumber num_Stack[], byte& offset,  const int& sizeofPostfixRef, const int& sizeofNumstack) {
+        for ( int p = 0; p <= sizeofPostfixRef; p++ ) {
                 byte value = post[p];
                 if (value > 1) {
-                        perform_operation(value, p, post, num_Stack, offset, c);
+                        perform_operation(value, p, post, num_Stack, offset, sizeofNumstack);
                 }
         }
         Serial.print("Finished Processing, we got result approximate : ");
         Serial.println(num_Stack[0]);
 }
 
-void perform_operation(byte & input_operator, int & pos, byte post[], BigNumber num_Stack[], byte& offset, const int& c) {
+void perform_operation(byte & input_operator, int & pos, byte post[], BigNumber num_Stack[], byte& offset, const int& sizeofNumstack) {
         byte index = -1;
         for (int z = pos; z >= 0; z--) {
                 if ( post[z] == 1 ) index++;
@@ -521,35 +558,49 @@ void perform_operation(byte & input_operator, int & pos, byte post[], BigNumber 
         index -= offset;
         if (input_operator == 2) {
                 num_Stack[index - 1] -= num_Stack[index];
-                bring_stack_down(index, num_Stack, offset, c);
+                bring_stack_down(index, num_Stack, sizeofNumstack);
+                offset++;
         }
         if (input_operator == 3) {
                 num_Stack[index - 1] += num_Stack[index];
-                bring_stack_down(index, num_Stack, offset, c);
+                bring_stack_down(index, num_Stack, sizeofNumstack);
+                offset++;
         }
         if (input_operator == 4) {
                 num_Stack[index - 1] *= num_Stack[index];
-                bring_stack_down(index, num_Stack, offset, c);
+                bring_stack_down(index, num_Stack, sizeofNumstack);
+                offset++;
         }
         if (input_operator == 5) {
                 num_Stack[index - 1] /= num_Stack[index];
-                bring_stack_down(index, num_Stack, offset, c);
+                bring_stack_down(index, num_Stack, sizeofNumstack);
+                offset++;
         }
         if (input_operator == 8) {
                 num_Stack[index - 1] = num_Stack[index - 1].pow(num_Stack[index]);
-                bring_stack_down(index, num_Stack, offset, c);
+                bring_stack_down(index, num_Stack, sizeofNumstack);
+                offset++;
         }
 }
 
-void bring_stack_down(byte& pop_at_this_x, BigNumber num_Stack[], byte& offset, const int& c) {
-        for ( int m = pop_at_this_x; m < c; m++) {
-                if (m != c) {
+void bring_stack_down(byte& bring_to_this_x, BigNumber num_Stack[], const int& sizeofNumstack) {
+        for ( int m = bring_to_this_x; m < sizeofNumstack; m++) {
+                if (m != sizeofNumstack) {
                         num_Stack[m] = num_Stack[m + 1];
                 } else num_Stack[m] = 0;
         }
-        offset++;
 }
 //===================================================================================================================================================================================
+void graph_Setup(double inputX, double inputY, double Plotfreq, double Xmin, double Xmax, double Xinc, double Ymin, double Ymax, double Yinc, String TheTitle, String Xlabels, String Ylabels, unsigned int gridCol, unsigned int axiCol, unsigned int funcCol, unsigned int txtcolor, unsigned int bcolor ) {
+        int Xcorner = 45;
+        int Ycorner = 290;
+        for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
+                //    inputY = inputX * inputX + 6 * inputX - 9;
+                inputY = tan(abs((inputX - 6) * (inputX - 9)));
+                Graph(tft, inputX, inputY, Xcorner, Ycorner, 420, 260, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
+        }
+}
+
 void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double w, double h, double xlo, double xhi, double xinc, double ylo, double yhi, double yinc, String title, String xlabel, String ylabel, unsigned int gcolor, unsigned int acolor, unsigned int pcolor, unsigned int tcolor, unsigned int bcolor, boolean & redraw) {
 
         double ydiv, xdiv;
