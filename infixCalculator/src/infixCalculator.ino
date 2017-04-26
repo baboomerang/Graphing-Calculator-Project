@@ -66,8 +66,8 @@ boolean display7 = true;
 boolean display8 = true;
 boolean display9 = true;
 
-BigNumber ox = 0;
-BigNumber oy = 0;
+BigNumber globalx = 0;
+BigNumber globaly = 0;
 
 char infxstr[120];          // infix string buffer from serial input
 byte x = 0;                 // infix string X location
@@ -204,28 +204,35 @@ void infixdataPull() {
                 if (Serial1.available() > 0 ) incomingbyte = Serial1.read();
                 if (Serial2.available() > 0 ) incomingbyte = Serial2.read();
                 char input = char(incomingbyte);
-                //  if (x < strlen(infxstr) ) { //only add the character if within char array length (we check for the last updated x position of the char)
-                if (input != 'G' && input != 'g' && input != '=' && input != 'C' && input != 'c') {
+                if (x <= (sizeof(infxstr)/sizeof(char)) && input != 'G' && input != 'g' && input != '=' && input != 'C' && input != 'c' && input != 'd' && input != 'D') {
                         infxstr[x] = input;
                         x++;
                         Serial.println(infxstr);
                 } else if (input == '=' || input == '=') {
-                        infxstr[strlen(infxstr)] = ')';                         // caps the recieved infix string with a ')'
+                        infxstr[strlen(infxstr)] = ')';                            // caps the recieved infix string with a ')'
                         process_infix_begin_calculation(infxstr, input, 0);        // once we press =, its like pressing '=' and the system starts to parse the given string.
                 } else if (input == 'g' || input == 'g') {
-                        infxstr[strlen(infxstr)] = ')';                         // caps the recieved infix string with a ')'
-                        process_infix_begin_calculation(infxstr, input, 2);        // once we press g, its like pressing '=' and the system starts to parse the given string.
+                        infxstr[strlen(infxstr)] = ')';                            // caps the recieved infix string with a ')'
+                        Graph(tft, globalx, globaly, 45, 290, 420, 260, -300, 300, 20, -300, 300, 20, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
+                   for (globalx = xMIN; globalx <= xMAX; globalx+= plotFreq) {
+                              process_infix_begin_calculation(infxstr, input, 0);  // once we press g, its like pressing '=' and the system starts to parse the given string.
+                              Graph(tft, globalx, globaly, 45, 290, 420, 260, xMIN, xMAX, plotfreq, yMIN, yMAX, plotfreq, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
+                     // set multiple graphing modes using that plotfreq parameter in the Graph();
+                     // future steps though, wait for other implements.
+                   }
                 } else if (input == 'c' || input == 'C') {
-                        memset(infxstr, 0, strlen(infxstr));             // sets all the bytes of memory that this string takes up to 0 in the respective address
+                        memset(infxstr, 0, strlen(infxstr));                       // sets all the bytes of memory that this string takes up to 0 in the respective address
                         infxstr[0] = '(';
                         x = 1;
-                        ox = 0;
-                        oy = 0;                                            // these 3 lines do the same thing that void Setup() would do during initialization
+                        globalx = 0;
+                        globaly = 0;                                               // these 3 lines do the same thing that void Setup() would do during initialization
                         Serial.println("Cleared String");
                         tft.fillScreen(BLACK);
                         tft.setRotation(1);
-                        display1=true;
-                }
+                        display1 = true;
+                } else if (input == 'd' || input == 'D') {
+                        infxstr[x] = '\0';
+                        if(x<0){x-=1;}
         }
 }
 
@@ -237,16 +244,16 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                 byte raw_index = 0;                 // number delimiter based by quantity of integers between each operator. (goes up by 1 every # scanned by proc and set as cutting length to tokenize numbers from the RAWstack)
                 byte infix_index = 0;               // infix reference stack X location
                 byte postfix_index = 0;             // postfix reference X location
-                byte variable_index = 0;
+                //byte variable_index = 0;
                 byte delete_ones = 0;               // initialize the offset to 0. everytime we perform an operation where 2 operands join into 1, we increment this number up once and later use as a negative offset to make sure we have a proper location of math done.
 
                 char infixrawnumbersonly[150];      // string of only the numbers together in a linear fashion. (makes it easy for cutting and sorting into the number stack)
                 byte infix_stack_reference[150];    // reference key showing INFIX notation of the expression in a simplified view
                 byte postfix_stack_reference[150];  // reference key showing POSTFIX notation of the expression in a simplified view
                 byte postfix_opstack[40];           // a stack used for rearranging operators to get them in PEMDAS order.
-                BigNumber numberStack[20];    // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
-                BigNumber backupStack[20];
-                byte variable_reference[20];    // tells us which spots in the numberStack have variable X's
+                BigNumber numberStack[20];          // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+                //BigNumber backupStack[20];
+                //byte variable_reference[20];      // tells us which spots in the numberStack have variable X's
 
                 /* Adjust the sizes of these stacks accordingly to your device.
                    All these calculations are done quickly and well. However, be mindful about the # of operators
@@ -254,10 +261,10 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                    By the nature of this program, the Arduino UNO (Atmega328p) is physically INCAPABLE of running
                    this sketch without running out of RAM. */
 
-                byte openparenth_count = 0;                          // count of how many open parenthesis are in the expression
-                bool next_to_right_parenth = false;                  // this checks if theres a closing parenthesis ')' next to the operator. Prevents operators from saving non-existant numbers to the reference stack.
-                bool operator_previously_detected = false;           // this checks if theres an operator immediately behind a right parenthesis or another operator.   '  i.e.  ++  ^/     -)   (^ '
-                bool left_parenth_active = false;                    // this checks if there's an opening parenthesis '(' right before processing an operator. Prevents operators from saving non existant numbers to the reference stack.
+                byte openparenth_count = 0;                           // count of how many open parenthesis are in the expression
+                bool next_to_right_parenth = false;                   // this checks if theres a closing parenthesis ')' next to the operator. Prevents operators from saving non-existant numbers to the reference stack.
+                bool operator_previously_detected = false;            // this checks if theres an operator immediately behind a right parenthesis or another operator.   '  i.e.  ++  ^/     -)   (^ '
+                bool left_parenth_active = false;                     // this checks if there's an opening parenthesis '(' right before processing an operator. Prevents operators from saving non existant numbers to the reference stack.
 
                 byte start = 0;                                       // used for saving numbers from the infixRaw array. Starting index point on the string
                 byte cut_location = 0;                                // used for saving numbers from the infix raw array. Exclusion-index based cutting. so if we save a number between start of 0 and cutpoint of 4, we only save the first 3 digits.
@@ -279,21 +286,22 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                                 raw_index += 1;                                 //  index of the infixRAWnumbers array increments everytime we add a number or decimal point to it
                                 break;
                         case 'X':
-                                if ( operator_previously_detected == true ) {   //implies an operator immediately behind this variable. ( 1343 + A )
-                                        save_to_reference_stack(variable_reference, variable_index, final_index);
-                                        numberStack[final_index] = 0;
-                                        final_index++;                          //future step, MAKE SURE THIS VALUE IS A POINTER TO THE INPUT X OF BELOW;
-                                        save_to_reference_stack(infix_stack_reference, infix_index, 1); // this will skip the appropriate numberStackINDEX as well so there is no overwritting happening.
-                                        operator_previously_detected = false;   //set the previously detected to false to prevent double variable stacking
+                                if ( operator_previously_detected == true ) {   //  implies an operator immediately behind this variable. ( 1343 + A )
+                                        //save_to_reference_stack(variable_reference, variable_index, final_index);
+                                        //numberStack[final_index] = variableX;
+                                        //final_index++;
+                                        save_to_reference_stack(numberStack,final_index, globalx);      // skips the savenum routine because we can predict & change what the X will be.     
+                                        save_to_reference_stack(infix_stack_reference, infix_index, 1); // skips the savenum (save the reference '1' to the infix reference stack).
+                                        operator_previously_detected = false;   //  set the previously detected to false to prevent double variable stacking
                                 } else if (operator_previously_detected == false && left_parenth_active == false) { //checks to see if there was a number or right closing parenthesis right behind.
-                                        throwError(2);  // double variable error (3+AA)
+                                        throwError(2);                          // double variable error (3+AA)
                                         return;
                                 }
                                 left_parenth_active = false;
                                 break;
                         case '.':
-                                operator_previously_detected = false;   //  these 2 lines make sure that any operator-parenthetical syntax checking isn't false positive.
-                                left_parenth_active = false;            //  having a number inbetween operators and parenthesis is mandatory for proper syntaax. This boolean just helps check when there is an error
+                                operator_previously_detected = false;           //  these 2 lines make sure that any operator-parenthetical syntax checking isn't false positive.
+                                left_parenth_active = false;                    //  having a number inbetween operators and parenthesis is mandatory for proper syntaax. This boolean just helps check when there is an error
                                 infixrawnumbersonly[raw_index] = character;     //  BUGWATCHER: 4/21/2017 : there could be glitches when theres more than one decimal point in a number
                                 raw_index += 1;                                 //  index of the infixRAW array increments everytime we add a number or decimal point to it
                                 break;
@@ -392,7 +400,9 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                         calculate_postfix(infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, sizeofOpstack);
                         if ( mode == 0 ) {
                                 evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
-                        } else if ( mode == 2 ) {
+                        }
+                                //   else if ( mode == 2 ) {
+                                // evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
                                 //5 hours of my life wasted testing this shit;
                                 // Serial.println("wtf bro");
                                 // Graph(tft, ox, oy, 45, 290, 420, 260, -1, 15, 1, -10, 15, 2, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
@@ -412,11 +422,11 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                                 //         Graph(tft, ox, outputY, 45, 290, 420, 260, -300, 300, 20, -300, 300, 20, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
                                 // }
                                 // for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
-                                //future steps, copy the detected x, into the reference stack, but also save a pointer or reference to it, and constantly reevaluate postfix against each update x
+                                // future steps, copy the detected x, into the reference stack, but also save a pointer or reference to it, and constantly reevaluate postfix against each update x
                                 // Graph(tft, inputX, inputY, Xcorner, Ycorner, graphLength, graphHeight, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
                                 // }
                         }
-                }
+                globaly = numberStack[0];
                 memset(numberStack, 0, sizeof(numberStack));
                 memset(postfix_opstack, 0, sizeof(postfix_opstack));
                 memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
@@ -505,6 +515,7 @@ void save_num(byte infix_stack[], byte& infix_index, char infixRAW[], byte& star
 
         numberStack[final_index] = i;
         final_index++;
+
 }
 
 void calculate_postfix(byte i_ref_stack[], byte postref[], byte opstack[], byte& pfx, const int& sizeofOpstack) {
