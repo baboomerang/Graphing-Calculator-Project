@@ -66,7 +66,8 @@ boolean display7 = true;
 boolean display8 = true;
 boolean display9 = true;
 
-double ox, oy;
+BigNumber ox = 0;
+BigNumber oy = 0;
 
 char infxstr[120];          // infix string buffer from serial input
 byte x = 0;                 // infix string X location
@@ -217,8 +218,13 @@ void infixdataPull() {
                 } else if (input == 'c' || input == 'C') {
                         memset(infxstr, 0, strlen(infxstr));             // sets all the bytes of memory that this string takes up to 0 in the respective address
                         infxstr[0] = '(';
-                        x = 1;                                           // these 3 lines do the same thing that void Setup() would do during initialization
+                        x = 1;
+                        ox = 0;
+                        oy = 0;                                            // these 3 lines do the same thing that void Setup() would do during initialization
                         Serial.println("Cleared String");
+                        tft.fillScreen(BLACK);
+                        tft.setRotation(1);
+                        display1=true;
                 }
         }
 }
@@ -231,13 +237,16 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                 byte raw_index = 0;                 // number delimiter based by quantity of integers between each operator. (goes up by 1 every # scanned by proc and set as cutting length to tokenize numbers from the RAWstack)
                 byte infix_index = 0;               // infix reference stack X location
                 byte postfix_index = 0;             // postfix reference X location
+                byte variable_index = 0;
                 byte delete_ones = 0;               // initialize the offset to 0. everytime we perform an operation where 2 operands join into 1, we increment this number up once and later use as a negative offset to make sure we have a proper location of math done.
 
                 char infixrawnumbersonly[150];      // string of only the numbers together in a linear fashion. (makes it easy for cutting and sorting into the number stack)
                 byte infix_stack_reference[150];    // reference key showing INFIX notation of the expression in a simplified view
                 byte postfix_stack_reference[150];  // reference key showing POSTFIX notation of the expression in a simplified view
                 byte postfix_opstack[40];           // a stack used for rearranging operators to get them in PEMDAS order.
-                BigNumber numberStack[20] = 0;      // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+                BigNumber numberStack[20];    // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
+                BigNumber backupStack[20];
+                byte variable_reference[20];    // tells us which spots in the numberStack have variable X's
 
                 /* Adjust the sizes of these stacks accordingly to your device.
                    All these calculations are done quickly and well. However, be mindful about the # of operators
@@ -271,16 +280,16 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                                 break;
                         case 'X':
                                 if ( operator_previously_detected == true ) {   //implies an operator immediately behind this variable. ( 1343 + A )
-                                        numberStack[final_index] = inputX;      //future step, MAKE SURE THIS VALUE IS A POINTER TO THE INPUT X OF BELOW;
-                                        save_to_reference_stack(infix_stack_reference, infix_index, 1);
+                                        save_to_reference_stack(variable_reference, variable_index, final_index);
+                                        numberStack[final_index] = 0;
+                                        final_index++;                          //future step, MAKE SURE THIS VALUE IS A POINTER TO THE INPUT X OF BELOW;
+                                        save_to_reference_stack(infix_stack_reference, infix_index, 1); // this will skip the appropriate numberStackINDEX as well so there is no overwritting happening.
                                         operator_previously_detected = false;   //set the previously detected to false to prevent double variable stacking
-                                } else if (operator_previously_detected == false) { //checks to see if there was a number or right closing parenthesis right behind.
+                                } else if (operator_previously_detected == false && left_parenth_active == false) { //checks to see if there was a number or right closing parenthesis right behind.
                                         throwError(2);  // double variable error (3+AA)
                                         return;
                                 }
                                 left_parenth_active = false;
-                                infixrawnumbersonly[raw_index] = character;
-                                raw_index += 1;
                                 break;
                         case '.':
                                 operator_previously_detected = false;   //  these 2 lines make sure that any operator-parenthetical syntax checking isn't false positive.
@@ -377,19 +386,37 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                         return;
                 } else {
                         // Warning: these 2 functions have a $#!t-load of nested functions with nested arguments, worst code 2017, ill fix it at some point
+                        byte R = 20; // good to 255 elements
+                        while ( R-- ) *( backupStack + R ) = *( numberStack + R ); // dest and src are your 2 array names
+                        // memcpy(backupStack,numberStack,sizeofNumstack*sizeof(BigNumber));
                         calculate_postfix(infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, sizeofOpstack);
                         if ( mode == 0 ) {
                                 evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
-                        } else if (mode == 2) {
-                                Serial.println("wtf bro");
+                        } else if ( mode == 2 ) {
+                                //5 hours of my life wasted testing this shit;
+                                // Serial.println("wtf bro");
+                                // Graph(tft, ox, oy, 45, 290, 420, 260, -1, 15, 1, -10, 15, 2, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
+                                // for (ox = -300; ox <= 300; ox += 1) {
+                                //         byte R = 20; // good to 255 elements
+                                //         while ( R-- ) *( numberStack + R ) = *( backupStack + R ); // dest and src are your 2 array names
+                                //         // memcpy(numberStack, backupStack, sizeofNumstack*sizeof(BigNumber));
+                                //         for(int i = 0; i<(sizeof(variable_reference)/sizeof(byte)); i++) {
+                                //                 if( i != 0 && variable_reference[i] != 0 && variable_reference[i] < variable_reference[i-1] ) {
+                                //                         numberStack[variable_reference[i]] = ox;
+                                //                 } else if (i==0 && variable_reference[i] == 0) {
+                                //                         numberStack[variable_reference[i]] = ox;
+                                //                 }
+                                //         }
+                                //         evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
+                                //         BigNumber outputY = numberStack[0];
+                                //         Graph(tft, ox, outputY, 45, 290, 420, 260, -300, 300, 20, -300, 300, 20, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
+                                // }
                                 // for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
                                 //future steps, copy the detected x, into the reference stack, but also save a pointer or reference to it, and constantly reevaluate postfix against each update x
                                 // Graph(tft, inputX, inputY, Xcorner, Ycorner, graphLength, graphHeight, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
                                 // }
                         }
-
                 }
-
                 memset(numberStack, 0, sizeof(numberStack));
                 memset(postfix_opstack, 0, sizeof(postfix_opstack));
                 memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
@@ -449,6 +476,11 @@ void throwError(byte code) {
         if (code == 2) {
                 Serial.println("Double Operator Syntax Error");
                 Serial2.write(2000);
+                return;
+        }
+        if (code == 3) {
+                Serial.println("Undefined X");
+                Serial2.write(2001);
                 return;
         }
 }
@@ -678,11 +710,12 @@ void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double
         //graph drawn now plot the data
         // the entire plotting code are these few lines...
         // recall that ox and oy are initialized as static above
+        BigNumber one = '1';
         x =  (x - xlo) * ( w) / (xhi - xlo) + gx;
         y =  (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
         d.drawLine(ox, oy, x, y, pcolor);
-        d.drawLine(ox, oy + 1, x, y + 1, pcolor);
-        d.drawLine(ox, oy - 1, x, y - 1, pcolor);
+        d.drawLine(ox, oy + one, x, y + one, pcolor);
+        d.drawLine(ox, oy - one, x, y - one, pcolor);
         ox = x;
         oy = y;
 
