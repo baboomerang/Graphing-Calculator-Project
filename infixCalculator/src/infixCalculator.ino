@@ -66,8 +66,10 @@ boolean display7 = true;
 boolean display8 = true;
 boolean display9 = true;
 
-BigNumber globalx = 0;
-BigNumber globaly = 0;
+BigNumber ox, oy;
+BigNumber InputX = 0;
+BigNumber InputY = 0;
+
 
 char infxstr[120];          // infix string buffer from serial input
 byte x = 0;                 // infix string X location
@@ -213,29 +215,36 @@ void infixdataPull() {
                         process_infix_begin_calculation(infxstr, input, 0);        // once we press =, its like pressing '=' and the system starts to parse the given string.
                 } else if (input == 'g' || input == 'g') {
                         infxstr[strlen(infxstr)] = ')';                            // caps the recieved infix string with a ')'
-                        Graph(tft, globalx, globaly, 45, 290, 420, 260, -300, 300, 20, -300, 300, 20, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
-                   for (globalx = xMIN; globalx <= xMAX; globalx+= plotFreq) {
-                              process_infix_begin_calculation(infxstr, input, 0);  // once we press g, its like pressing '=' and the system starts to parse the given string.
-                              Graph(tft, globalx, globaly, 45, 290, 420, 260, xMIN, xMAX, plotfreq, yMIN, yMAX, plotfreq, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
-                     // set multiple graphing modes using that plotfreq parameter in the Graph();
-                     // future steps though, wait for other implements.
-                   }
+                        Graph(tft, 0, 0, 45, 290, 420, 260, -30, 30, 5, -30, 30, 5, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
+                        byte xMIN = -30;
+                        byte xMAX = 30;
+                        byte yMIN = -30;
+                        byte yMAX = 30;
+                        BigNumber plotfreq = 10;
+                        for (InputX = -30; InputX <= 30; InputX += 10) {
+                                process_infix_begin_calculation(infxstr, input, 0); // once we press g, its like pressing '=' and the system starts to parse the given string.
+                                Graph(tft, 0, 0, 45, 290, 420, 260, -30, 30, 5, -30, 30, 5, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
+                                // set multiple graphing modes using that plotfreq parameter in the Graph();SS
+                                // future steps though, wait for other implements.
+                        }
                 } else if (input == 'c' || input == 'C') {
                         memset(infxstr, 0, strlen(infxstr));                       // sets all the bytes of memory that this string takes up to 0 in the respective address
                         infxstr[0] = '(';
                         x = 1;
-                        globalx = 0;
-                        globaly = 0;                                               // these 3 lines do the same thing that void Setup() would do during initialization
+                        ox = 0;
+                        oy = 0;
+                        InputX = 0;
+                        InputY = 0;                                               // these 3 lines do the same thing that void Setup() would do during initialization
                         Serial.println("Cleared String");
                         tft.fillScreen(BLACK);
                         tft.setRotation(1);
                         display1 = true;
                 } else if (input == 'd' || input == 'D') {
                         infxstr[x] = '\0';
-                        if(x<0){x-=1;}
+                        if(x<0) {x-=1;}
+                }
         }
 }
-
 //This is where the magic begins... and ends.
 void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
         if (byteChar == '=' || byteChar == 'g' || byteChar == 'G') {
@@ -288,9 +297,9 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                         case 'X':
                                 if ( operator_previously_detected == true ) {   //  implies an operator immediately behind this variable. ( 1343 + A )
                                         //save_to_reference_stack(variable_reference, variable_index, final_index);
-                                        //numberStack[final_index] = variableX;
-                                        //final_index++;
-                                        save_to_reference_stack(numberStack,final_index, globalx);      // skips the savenum routine because we can predict & change what the X will be.     
+                                        numberStack[final_index] = InputX;
+                                        final_index++;
+                                        // skips the savenum routine because  ^  we can predict & change what the X will be.
                                         save_to_reference_stack(infix_stack_reference, infix_index, 1); // skips the savenum (save the reference '1' to the infix reference stack).
                                         operator_previously_detected = false;   //  set the previously detected to false to prevent double variable stacking
                                 } else if (operator_previously_detected == false && left_parenth_active == false) { //checks to see if there was a number or right closing parenthesis right behind.
@@ -394,39 +403,39 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                         return;
                 } else {
                         // Warning: these 2 functions have a $#!t-load of nested functions with nested arguments, worst code 2017, ill fix it at some point
-                        byte R = 20; // good to 255 elements
-                        while ( R-- ) *( backupStack + R ) = *( numberStack + R ); // dest and src are your 2 array names
+                        // byte R = 20; // good to 255 elements
+                        // while ( R-- ) *( backupStack + R ) = *( numberStack + R ); // dest and src are your 2 array names
                         // memcpy(backupStack,numberStack,sizeofNumstack*sizeof(BigNumber));
                         calculate_postfix(infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, sizeofOpstack);
                         if ( mode == 0 ) {
                                 evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
                         }
-                                //   else if ( mode == 2 ) {
-                                // evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
-                                //5 hours of my life wasted testing this shit;
-                                // Serial.println("wtf bro");
-                                // Graph(tft, ox, oy, 45, 290, 420, 260, -1, 15, 1, -10, 15, 2, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
-                                // for (ox = -300; ox <= 300; ox += 1) {
-                                //         byte R = 20; // good to 255 elements
-                                //         while ( R-- ) *( numberStack + R ) = *( backupStack + R ); // dest and src are your 2 array names
-                                //         // memcpy(numberStack, backupStack, sizeofNumstack*sizeof(BigNumber));
-                                //         for(int i = 0; i<(sizeof(variable_reference)/sizeof(byte)); i++) {
-                                //                 if( i != 0 && variable_reference[i] != 0 && variable_reference[i] < variable_reference[i-1] ) {
-                                //                         numberStack[variable_reference[i]] = ox;
-                                //                 } else if (i==0 && variable_reference[i] == 0) {
-                                //                         numberStack[variable_reference[i]] = ox;
-                                //                 }
-                                //         }
-                                //         evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
-                                //         BigNumber outputY = numberStack[0];
-                                //         Graph(tft, ox, outputY, 45, 290, 420, 260, -300, 300, 20, -300, 300, 20, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
-                                // }
-                                // for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
-                                // future steps, copy the detected x, into the reference stack, but also save a pointer or reference to it, and constantly reevaluate postfix against each update x
-                                // Graph(tft, inputX, inputY, Xcorner, Ycorner, graphLength, graphHeight, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
-                                // }
-                        }
-                globaly = numberStack[0];
+                        //   else if ( mode == 2 ) {
+                        // evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
+                        //5 hours of my life wasted testing this shit;
+                        // Serial.println("wtf bro");
+                        // Graph(tft, ox, oy, 45, 290, 420, 260, -1, 15, 1, -10, 15, 2, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
+                        // for (ox = -300; ox <= 300; ox += 1) {
+                        //         byte R = 20; // good to 255 elements
+                        //         while ( R-- ) *( numberStack + R ) = *( backupStack + R ); // dest and src are your 2 array names
+                        //         // memcpy(numberStack, backupStack, sizeofNumstack*sizeof(BigNumber));
+                        //         for(int i = 0; i<(sizeof(variable_reference)/sizeof(byte)); i++) {
+                        //                 if( i != 0 && variable_reference[i] != 0 && variable_reference[i] < variable_reference[i-1] ) {
+                        //                         numberStack[variable_reference[i]] = ox;
+                        //                 } else if (i==0 && variable_reference[i] == 0) {
+                        //                         numberStack[variable_reference[i]] = ox;
+                        //                 }
+                        //         }
+                        //         evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
+                        //         BigNumber outputY = numberStack[0];
+                        //         Graph(tft, ox, outputY, 45, 290, 420, 260, -300, 300, 20, -300, 300, 20, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
+                        // }
+                        // for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
+                        // future steps, copy the detected x, into the reference stack, but also save a pointer or reference to it, and constantly reevaluate postfix against each update x
+                        // Graph(tft, inputX, inputY, Xcorner, Ycorner, graphLength, graphHeight, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
+                        // }
+                }
+                InputY = numberStack[0];
                 memset(numberStack, 0, sizeof(numberStack));
                 memset(postfix_opstack, 0, sizeof(postfix_opstack));
                 memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
