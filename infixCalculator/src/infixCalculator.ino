@@ -67,8 +67,15 @@ boolean display8 = true;
 boolean display9 = true;
 
 BigNumber ox, oy;
-BigNumber InputX = 0;
-BigNumber InputY = 0;
+BigNumber InputX = NULL;
+BigNumber InputY = NULL;
+
+
+/* a 1
+   b 10
+   c 20
+   d 30
+   e 40 */
 
 
 char infxstr[120];          // infix string buffer from serial input
@@ -78,7 +85,7 @@ Adafruit_HX8357 tft = Adafruit_HX8357(TFT_CS, TFT_DC);       // attach display t
 
 /*
    Input Infix Expression and Terminal Output Results
-   ((3*5325)^7/3412*16)-12+(1555/12-29421)^2
+   ((3*5325)/3412*16)-12+(1555/12-29421)
 
    3
    5325
@@ -211,21 +218,18 @@ void infixdataPull() {
                         x++;
                         Serial.println(infxstr);
                 } else if (input == '=' || input == '=') {
-                        infxstr[strlen(infxstr)] = ')';                            // caps the recieved infix string with a ')'
-                        process_infix_begin_calculation(infxstr, input, 0);        // once we press =, its like pressing '=' and the system starts to parse the given string.
+                        infxstr[strlen(infxstr)] = ')';                         // caps the recieved infix string with a ')'
+                        process_infix_begin_calculation(infxstr, input);
                 } else if (input == 'g' || input == 'g') {
-                        infxstr[strlen(infxstr)] = ')';                            // caps the recieved infix string with a ')'
-                        Graph(tft, 0, 0, 45, 290, 420, 260, -30, 30, 5, -30, 30, 5, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
-                        byte xMIN = -30;
-                        byte xMAX = 30;
-                        byte yMIN = -30;
-                        byte yMAX = 30;
-                        BigNumber plotfreq = 10;
-                        for (InputX = -30; InputX <= 30; InputX += 10) {
-                                process_infix_begin_calculation(infxstr, input, 0); // once we press g, its like pressing '=' and the system starts to parse the given string.
-                                Graph(tft, 0, 0, 45, 290, 420, 260, -30, 30, 5, -30, 30, 5, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
-                                // set multiple graphing modes using that plotfreq parameter in the Graph();SS
-                                // future steps though, wait for other implements.
+                        infxstr[strlen(infxstr)] = ')';
+                        BigNumber xMIN = -30;
+                        BigNumber xMAX = 30;
+                        BigNumber yMIN = -30;
+                        BigNumber yMAX = 30;
+                        BigNumber plotfreq = 1;
+                        for (InputX = xMIN; InputX <= xMAX; InputX += plotfreq) {
+                                process_infix_begin_calculation(infxstr, input);
+                                // Graph(tft, InputX, InputY, 45, 290, 420, 260, xMIN, xMAX, 5, yMIN, yMAX, 5, infxstr, "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
                         }
                 } else if (input == 'c' || input == 'C') {
                         memset(infxstr, 0, strlen(infxstr));                       // sets all the bytes of memory that this string takes up to 0 in the respective address
@@ -239,14 +243,15 @@ void infixdataPull() {
                         tft.fillScreen(BLACK);
                         tft.setRotation(1);
                         display1 = true;
-                } else if (input == 'd' || input == 'D') {
+                }
+                /*else if (input == 'd' || input == 'D') {
                         infxstr[x] = '\0';
                         if(x<0) {x-=1;}
-                }
+                   }*/
         }
 }
 //This is where the magic begins... and ends.
-void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
+void process_infix_begin_calculation(char* istr, char byteChar) {
         if (byteChar == '=' || byteChar == 'g' || byteChar == 'G') {
 
                 byte final_index = 0;               // saved number array position in order ie. numberStack[3] = "2323212" where final_index = 3
@@ -274,7 +279,7 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                 bool next_to_right_parenth = false;                   // this checks if theres a closing parenthesis ')' next to the operator. Prevents operators from saving non-existant numbers to the reference stack.
                 bool operator_previously_detected = false;            // this checks if theres an operator immediately behind a right parenthesis or another operator.   '  i.e.  ++  ^/     -)   (^ '
                 bool left_parenth_active = false;                     // this checks if there's an opening parenthesis '(' right before processing an operator. Prevents operators from saving non existant numbers to the reference stack.
-
+                bool variable_previously_detected = false;
                 byte start = 0;                                       // used for saving numbers from the infixRaw array. Starting index point on the string
                 byte cut_location = 0;                                // used for saving numbers from the infix raw array. Exclusion-index based cutting. so if we save a number between start of 0 and cutpoint of 4, we only save the first 3 digits.
 
@@ -295,14 +300,15 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                                 raw_index += 1;                                 //  index of the infixRAWnumbers array increments everytime we add a number or decimal point to it
                                 break;
                         case 'X':
-                                if ( operator_previously_detected == true ) {   //  implies an operator immediately behind this variable. ( 1343 + A )
+                                if ( operator_previously_detected == true || left_parenth_active == true ) {   //  implies an operator immediately behind this variable. ( 1343 + A )
                                         //save_to_reference_stack(variable_reference, variable_index, final_index);
                                         numberStack[final_index] = InputX;
                                         final_index++;
                                         // skips the savenum routine because  ^  we can predict & change what the X will be.
                                         save_to_reference_stack(infix_stack_reference, infix_index, 1); // skips the savenum (save the reference '1' to the infix reference stack).
                                         operator_previously_detected = false;   //  set the previously detected to false to prevent double variable stacking
-                                } else if (operator_previously_detected == false && left_parenth_active == false) { //checks to see if there was a number or right closing parenthesis right behind.
+                                        variable_previously_detected = true;
+                                } else if ((operator_previously_detected == false && left_parenth_active == false) || variable_previously_detected == true) { //checks to see if there was a number or right closing parenthesis right behind.
                                         throwError(2);                          // double variable error (3+AA)
                                         return;
                                 }
@@ -332,17 +338,25 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                                 next_to_right_parenth = true;                   // this is a right-closing parenthesis
                                 if ( cut_location != raw_index ) {              // if the last detected operator (last updated cut_location) is different from raw index, implies a number is in between the closing parenthesis and that last operator (ie. 345+'3436') cut would be 4 but raw would be 7
                                         cut_location = raw_index;               // update the cut point to the last detcted location of a number and proceed to save the number 'inbetween' that last operator and this parenthesis
-                                        save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
+                                        if(!variable_previously_detected) {
+                                                save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
+                                        } else {variable_previously_detected = false;}
                                 }
                                 save_to_reference_stack(infix_stack_reference, infix_index, 7); // check the comments below LINE 388 to know what the reference stacks do
+                                variable_previously_detected = false;
                                 break;
                         case '^':
                                 error = syntax_check(operator_previously_detected,left_parenth_active); // runs some conditions regarding left parenthesis and operator status, returns true if there is an error, returns false if there is none.
                                 if (error) {return;}                            // if the bool is returned as true, code EXITS process_infix_begin_calculation() on this line and we go back into infixdataPull() for input detection and reentry.
                                 cut_location = raw_index;                       // the new cut location is set to the last updated raw_index position. (remember the raw_index will always be +1 after adding the last character, which is beneficial to the exclusionary limit cutting thing i talked about earlier)
-                                if (next_to_right_parenth  == false) {          // without this check, having any operator next to a ' ) ' would have saved a non-existant number to the reference stack
-                                        save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
-                                } else next_to_right_parenth = false;           // if it was true, then now its set to false because there is no longer an immediate closing parenthesis ') +'
+                                if (next_to_right_parenth == false) {          // without this check, having any operator next to a ' ) ' OR a VARIABLE 'X' would have saved a non-existant number to the reference stack
+                                        if(!variable_previously_detected) {
+                                                save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
+                                        } else {variable_previously_detected = false;}
+                                } else {
+                                        next_to_right_parenth = false;          // if it was true, then now its set to false because there is no longer an immediate closing parenthesis ') +'
+                                        variable_previously_detected = false;
+                                }
                                 save_to_reference_stack(infix_stack_reference, infix_index, 8); // check the comments below LINE 388 to know what the reference stacks do
                                 start = cut_location;                           // after saving our number, the starting position to save the next number will be the last detected 'cut_location'   '1234' would be start 0 & cut 5. save the #, then update start to 5 and cut 7 ( dont forget inclusionary start and exclusionary limit behavior )
                                 break;
@@ -350,9 +364,14 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                                 error = syntax_check(operator_previously_detected,left_parenth_active);
                                 if (error) {return;}
                                 cut_location = raw_index;
-                                if (next_to_right_parenth  == false) {
-                                        save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
-                                } else next_to_right_parenth = false;
+                                if (next_to_right_parenth == false) {
+                                        if(!variable_previously_detected) {
+                                                save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
+                                        } else {variable_previously_detected = false;}
+                                } else {
+                                        next_to_right_parenth = false;
+                                        variable_previously_detected = false;
+                                }
                                 save_to_reference_stack(infix_stack_reference, infix_index, 2);
                                 start = cut_location;
                                 break;
@@ -360,9 +379,14 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                                 error = syntax_check(operator_previously_detected,left_parenth_active);
                                 if (error) {return;}
                                 cut_location = raw_index;
-                                if (next_to_right_parenth  == false) {
-                                        save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
-                                } else next_to_right_parenth = false;
+                                if (next_to_right_parenth == false) {
+                                        if(!variable_previously_detected) {
+                                                save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
+                                        } else {variable_previously_detected = false;}
+                                } else {
+                                        next_to_right_parenth = false;
+                                        variable_previously_detected = false;
+                                }
                                 save_to_reference_stack(infix_stack_reference, infix_index, 3);
                                 start = cut_location;
                                 break;
@@ -370,9 +394,14 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                                 error = syntax_check(operator_previously_detected,left_parenth_active);
                                 if (error) {return;}
                                 cut_location = raw_index;
-                                if (next_to_right_parenth  == false) {
-                                        save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
-                                } else next_to_right_parenth = false;
+                                if (next_to_right_parenth == false) {
+                                        if(!variable_previously_detected) {
+                                                save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
+                                        } else {variable_previously_detected = false;}
+                                } else {
+                                        next_to_right_parenth = false;
+                                        variable_previously_detected = false;
+                                }
                                 save_to_reference_stack(infix_stack_reference, infix_index, 4);
                                 start = cut_location;
                                 break;
@@ -380,18 +409,23 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                                 error = syntax_check(operator_previously_detected,left_parenth_active);
                                 if (error) {return;}
                                 cut_location = raw_index;
-                                if (next_to_right_parenth  == false) {
-                                        save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
-                                } else next_to_right_parenth = false;
+                                if (next_to_right_parenth == false) {
+                                        if(!variable_previously_detected) {
+                                                save_num(infix_stack_reference, infix_index, infixrawnumbersonly, start, cut_location, numberStack, final_index);
+                                        } else {variable_previously_detected = false;}
+                                } else {
+                                        next_to_right_parenth = false;
+                                        variable_previously_detected = false;
+                                }
                                 save_to_reference_stack(infix_stack_reference, infix_index, 5);
                                 start = cut_location;
                                 break;
                         }
                 }//end of for loop
                  //============================================================================================================================================================================================================
-                for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(byte)); i++) {
-                        Serial.print(String(infix_stack_reference[i]));
-                } Serial.println("");
+                 /*for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(byte)); i++) {
+                         Serial.print(String(infix_stack_reference[i]));
+                    } Serial.println("");*/
 
                 const int sizeofPostfixRef = ((sizeof(postfix_stack_reference) - 1) / sizeof(byte));
                 const int sizeofOpstack = ((sizeof(postfix_opstack) - 1) / sizeof(byte));
@@ -402,41 +436,15 @@ void process_infix_begin_calculation(char* istr, char byteChar, byte mode) {
                         throwError(0);
                         return;
                 } else {
-                        // Warning: these 2 functions have a $#!t-load of nested functions with nested arguments, worst code 2017, ill fix it at some point
-                        // byte R = 20; // good to 255 elements
-                        // while ( R-- ) *( backupStack + R ) = *( numberStack + R ); // dest and src are your 2 array names
-                        // memcpy(backupStack,numberStack,sizeofNumstack*sizeof(BigNumber));
-                        calculate_postfix(infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, sizeofOpstack);
-                        if ( mode == 0 ) {
-                                evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
-                        }
-                        //   else if ( mode == 2 ) {
-                        // evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
-                        //5 hours of my life wasted testing this shit;
-                        // Serial.println("wtf bro");
-                        // Graph(tft, ox, oy, 45, 290, 420, 260, -1, 15, 1, -10, 15, 2, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
-                        // for (ox = -300; ox <= 300; ox += 1) {
-                        //         byte R = 20; // good to 255 elements
-                        //         while ( R-- ) *( numberStack + R ) = *( backupStack + R ); // dest and src are your 2 array names
-                        //         // memcpy(numberStack, backupStack, sizeofNumstack*sizeof(BigNumber));
-                        //         for(int i = 0; i<(sizeof(variable_reference)/sizeof(byte)); i++) {
-                        //                 if( i != 0 && variable_reference[i] != 0 && variable_reference[i] < variable_reference[i-1] ) {
-                        //                         numberStack[variable_reference[i]] = ox;
-                        //                 } else if (i==0 && variable_reference[i] == 0) {
-                        //                         numberStack[variable_reference[i]] = ox;
-                        //                 }
-                        //         }
-                        //         evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
-                        //         BigNumber outputY = numberStack[0];
-                        //         Graph(tft, ox, outputY, 45, 290, 420, 260, -300, 300, 20, -300, 300, 20, "Sample Graph", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
-                        // }
-                        // for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
-                        // future steps, copy the detected x, into the reference stack, but also save a pointer or reference to it, and constantly reevaluate postfix against each update x
-                        // Graph(tft, inputX, inputY, Xcorner, Ycorner, graphLength, graphHeight, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
-                        // }
+                        calculate_postfix(infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, sizeofPostfixRef, sizeofOpstack, sizeofNumstack);
+                        for (int h = 0; h < sizeofNumstack; h++) {
+                                numberStack[h] = numberStack[h];
+                        } Serial.println("proc'ed");
+                        evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
                 }
-                InputY = numberStack[0];
-                memset(numberStack, 0, sizeof(numberStack));
+                if( byteChar != '=') {
+                        InputY = numberStack[0];
+                }
                 memset(postfix_opstack, 0, sizeof(postfix_opstack));
                 memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
                 memset(infix_stack_reference, 0, sizeof(infix_stack_reference));
@@ -479,28 +487,24 @@ bool syntax_check (bool& operator_previously_detected, bool& left_parenth_active
         }
 }
 
-void throwError(byte code) {
+bool throwError(byte code) {
         //print out errors here, do syntax checking? who the fuck knows....
         if (code == 0) {
                 Serial.println("Mismatched Parenthesis");
                 Serial2.write(13);
-                return;
         }
         if (code == 1) {
                 Serial.println("MEM-HALT Overflow");
                 EEPROM.write(2, 0);
                 Serial2.write(1999);
-                return;
         }
         if (code == 2) {
                 Serial.println("Double Operator Syntax Error");
                 Serial2.write(2000);
-                return;
         }
         if (code == 3) {
                 Serial.println("Undefined X");
                 Serial2.write(2001);
-                return;
         }
 }
 
@@ -526,34 +530,37 @@ void save_num(byte infix_stack[], byte& infix_index, char infixRAW[], byte& star
         final_index++;
 
 }
-
-void calculate_postfix(byte i_ref_stack[], byte postref[], byte opstack[], byte& pfx, const int& sizeofOpstack) {
+// ATTENTION: EVERYLINE BELOW THIS ONE
+//  WAS ROLL BACK TO VERY EARLY COMMIT,
+//  SOMETHING WITH THE PLATFORMIO COMPILER
+//  THAT DESTROYS CERTAIN BEHAVIORS WITH THESE LOOPS.
+void calculate_postfix(byte i_ref_stack[], byte post[], byte opstack[], byte& pfx, const int& a, const int& b, const int& c) {
         byte ifx = 0;
         for ( byte k = 1; k != 0; k = i_ref_stack[ifx] ) {
                 k = i_ref_stack[ifx];
                 ifx++;
-                if ( k == 1 ) save_to_reference_stack(postref, pfx, 1);
+                if ( k == 1 ) save_to_reference_stack(post, pfx, 1);
                 if ( k == 2 || k == 3 ) {
-                        pushtostack(2, k, postref, opstack, pfx, sizeofOpstack);
+                        pushtostack(2, k, post, opstack, pfx, a, b, c);
                 } else if ( k == 4 || k == 5 ) {
-                        pushtostack(3, k, postref, opstack, pfx, sizeofOpstack);
+                        pushtostack(3, k, post, opstack, pfx, a, b, c);
                 } else if ( k == 6 ) {
-                        pushtostack(255, k, postref, opstack, pfx,sizeofOpstack);
+                        pushtostack(255, k, post, opstack, pfx, a, b, c);
                 } else if ( k == 7 ) {
-                        pushtostack(255, k, postref, opstack, pfx, sizeofOpstack);
+                        pushtostack(255, k, post, opstack, pfx, a, b, c);
                 } else if ( k == 8 ) {
-                        pushtostack(4, k, postref, opstack, pfx, sizeofOpstack);
+                        pushtostack(4, k, post, opstack, pfx, a, b, c);
                 }
         }
         /* this prints the completed postfix_reference_stack once we finish pushing the last operator to the stack and pushtostack() exits */
-        for ( int p = sizeofOpstack; p >= 0; p--) {
-                Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(postref[p]));
-        }
+        //for ( int p = b; p >= 0; p--) {
+        //      Serial.println("postfix_stack_reference[" + String(p) + "] =  " + String(post[p]));
+        //}
 }
 
-void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack[], byte& pfx, const int& sizeofOpstack) {
+void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack[], byte& pfx, const int& a, const int& b, const int& c) {
         //Serial.println("pushtostack() DEBUG: precedence: " + String(precedence) + " operator value: " + String(opr8tr));
-        for ( int p = sizeofOpstack; p >= 0; p--) {
+        for ( int p = b; p >= 0; p--) {
                 if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
                         postfix_opstack[p] = opr8tr;
                         //      //Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
@@ -566,7 +573,7 @@ void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack
                         int selected_oper8tr_in_opstack = postfix_opstack[p];
                         save_to_reference_stack(post, pfx, selected_oper8tr_in_opstack);
                         postfix_opstack[p] = opr8tr;
-                        for ( int loc = p + 1; loc < sizeofOpstack; loc++ ) postfix_opstack[loc] = 0;
+                        for ( int loc = p + 1; loc < b; loc++ ) postfix_opstack[loc] = 0;
                 } else if ((opr8tr != 7 && opr8tr >= postfix_opstack[p] && postfix_opstack[p] != 0 && postfix_opstack[p] != 6))  {
                         postfix_opstack[ p + 1 ] = opr8tr;
                         break;
@@ -591,18 +598,18 @@ void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack
 }
 
 
-void evaluate_postfix(byte post[], BigNumber num_Stack[], byte& offset,  const int& sizeofPostfixRef, const int& sizeofNumstack) {
-        for ( int p = 0; p <= sizeofPostfixRef; p++ ) {
+void evaluate_postfix(byte post[], BigNumber num_Stack[], byte& offset,  const int& a, const int& c) {
+        for ( int p = 0; p <= a; p++ ) {
                 byte value = post[p];
                 if (value > 1) {
-                        perform_operation(value, p, post, num_Stack, offset, sizeofNumstack);
+                        perform_operation(value, p, post, num_Stack, offset, c);
                 }
         }
-        Serial.print("Finished Processing, we got result approximate : ");
+        // Serial.print("Finished Processing, we got result approximate : ");
         Serial.println(num_Stack[0]);
 }
 
-void perform_operation(byte & input_operator, int & pos, byte post[], BigNumber num_Stack[], byte& offset, const int& sizeofNumstack) {
+void perform_operation(byte& input_operator, int & pos, byte post[], BigNumber num_Stack[], byte& offset, const int& c) {
         byte index = -1;
         for (int z = pos; z >= 0; z--) {
                 if ( post[z] == 1 ) index++;
@@ -610,40 +617,36 @@ void perform_operation(byte & input_operator, int & pos, byte post[], BigNumber 
         index -= offset;
         if (input_operator == 2) {
                 num_Stack[index - 1] -= num_Stack[index];
-                bring_stack_down(index, num_Stack, sizeofNumstack);
-                offset++;
+                bring_stack_down(index, num_Stack, offset, c);
         }
         if (input_operator == 3) {
                 num_Stack[index - 1] += num_Stack[index];
-                bring_stack_down(index, num_Stack, sizeofNumstack);
-                offset++;
+                bring_stack_down(index, num_Stack, offset, c);
         }
         if (input_operator == 4) {
                 num_Stack[index - 1] *= num_Stack[index];
-                bring_stack_down(index, num_Stack, sizeofNumstack);
-                offset++;
+                bring_stack_down(index, num_Stack, offset, c);
         }
         if (input_operator == 5) {
                 num_Stack[index - 1] /= num_Stack[index];
-                bring_stack_down(index, num_Stack, sizeofNumstack);
-                offset++;
+                bring_stack_down(index, num_Stack, offset, c);
         }
         if (input_operator == 8) {
                 num_Stack[index - 1] = num_Stack[index - 1].pow(num_Stack[index]);
-                bring_stack_down(index, num_Stack, sizeofNumstack);
-                offset++;
+                bring_stack_down(index, num_Stack, offset, c);
         }
 }
 
-void bring_stack_down(byte& bring_to_this_x, BigNumber num_Stack[], const int& sizeofNumstack) {
-        for ( int m = bring_to_this_x; m < sizeofNumstack; m++) {
-                if (m != sizeofNumstack) {
+void bring_stack_down(byte& pop_at_this_x, BigNumber num_Stack[], byte& offset, const int& c) {
+        for ( int m = pop_at_this_x; m < c; m++) {
+                if (m != c) {
                         num_Stack[m] = num_Stack[m + 1];
                 } else num_Stack[m] = 0;
         }
+        offset++;
 }
 //===================================================================================================================================================================================
-void graph_Setup(double inputX, double inputY, double Plotfreq, double Xmin, double Xmax, double Xinc, double Ymin, double Ymax, double Yinc, String TheTitle, String Xlabels, String Ylabels, unsigned int gridCol, unsigned int axiCol, unsigned int funcCol, unsigned int txtcolor, unsigned int bcolor ) {
+/*void graph_Setup(double inputX, double inputY, double Plotfreq, double Xmin, double Xmax, double Xinc, double Ymin, double Ymax, double Yinc, String TheTitle, String Xlabels, String Ylabels, unsigned int gridCol, unsigned int axiCol, unsigned int funcCol, unsigned int txtcolor, unsigned int bcolor ) {
         int Xcorner = 45;
         int Ycorner = 290;
         for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
@@ -651,19 +654,23 @@ void graph_Setup(double inputX, double inputY, double Plotfreq, double Xmin, dou
                 inputY = tan(abs((inputX - 6) * (inputX - 9)));
                 Graph(tft, inputX, inputY, Xcorner, Ycorner, 420, 260, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
         }
-}
+   }*/
 
-void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double w, double h, double xlo, double xhi, double xinc, double ylo, double yhi, double yinc, String title, String xlabel, String ylabel, unsigned int gcolor, unsigned int acolor, unsigned int pcolor, unsigned int tcolor, unsigned int bcolor, boolean & redraw) {
-
-        double ydiv, xdiv;
+void Graph(Adafruit_HX8357 & disp, BigNumber x, BigNumber y, BigNumber gx, BigNumber gy, BigNumber w, BigNumber h, BigNumber xlo, BigNumber xhi, BigNumber xinc, BigNumber ylo, BigNumber yhi, BigNumber yinc, String title, String xlabel, String ylabel, unsigned int gcolor, unsigned int acolor, unsigned int pcolor, unsigned int tcolor, unsigned int bcolor, boolean & redraw) {
+        /* a 1
+           b 10
+           c 20
+           d 30
+           e 40 */
+        BigNumber ydiv, xdiv;
         // initialize old x and old y in order to draw the first point of the graph
         // but save the transformed value
         // note my transform funcition is the same as the map function, except the map uses long and we need doubles
         //static double ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
         //static double oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-        double i;
-        double temp;
-        int rot, newrot;
+        BigNumber i;
+        BigNumber temp;
+        BigNumber rot, newrot;
 
         if (redraw == true) {
 
@@ -676,17 +683,17 @@ void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double
                         temp =  (i - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
 
                         if (i == 0) {
-                                d.drawLine(gx, temp, gx + w, temp, acolor);
+                                disp.drawLine(gx, temp, gx + w, temp, acolor);
                         }
                         else {
-                                d.drawLine(gx, temp, gx + w, temp, gcolor);
+                                disp.drawLine(gx, temp, gx + w, temp, gcolor);
                         }
 
-                        d.setTextSize(1);
-                        d.setTextColor(tcolor, bcolor);
-                        d.setCursor(gx - 40, temp);
+                        disp.setTextSize(1);
+                        disp.setTextColor(tcolor, bcolor);
+                        disp.setCursor(gx - BigNumber(40), temp);
                         // precision is default Arduino--this could really use some format control
-                        d.println(i);
+                        disp.println(int(i));
                 }
                 // draw x scale
                 for (i = xlo; i <= xhi; i += xinc) {
@@ -695,34 +702,34 @@ void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double
 
                         temp =  (i - xlo) * ( w) / (xhi - xlo) + gx;
                         if (i == 0) {
-                                d.drawLine(temp, gy, temp, gy - h, acolor);
+                                disp.drawLine(temp, gy, temp, gy - h, acolor);
                         }
                         else {
-                                d.drawLine(temp, gy, temp, gy - h, gcolor);
+                                disp.drawLine(temp, gy, temp, gy - h, gcolor);
                         }
 
-                        d.setTextSize(1);
-                        d.setTextColor(tcolor, bcolor);
-                        d.setCursor(temp, gy + 10);
+                        disp.setTextSize(1);
+                        disp.setTextColor(tcolor, bcolor);
+                        disp.setCursor(temp, gy + BigNumber(10));
                         // precision is default Arduino--this could really use some format control
-                        d.println(i);
+                        disp.println(int(i));
                 }
 
                 //now draw the labels
-                d.setTextSize(2);
-                d.setTextColor(tcolor, bcolor);
-                d.setCursor(gx, gy - h - 30);
-                d.println(title);
+                disp.setTextSize(2);
+                disp.setTextColor(tcolor, bcolor);
+                disp.setCursor(gx, gy - h - BigNumber(30));
+                disp.println(title);
 
-                d.setTextSize(1);
-                d.setTextColor(acolor, bcolor);
-                d.setCursor(gx, gy + 20);
-                d.println(xlabel);
+                disp.setTextSize(1);
+                disp.setTextColor(acolor, bcolor);
+                disp.setCursor(gx, gy + BigNumber(20));
+                disp.println(xlabel);
 
-                d.setTextSize(1);
-                d.setTextColor(acolor, bcolor);
-                d.setCursor(gx - 30, gy - h - 10);
-                d.println(ylabel);
+                disp.setTextSize(1);
+                disp.setTextColor(acolor, bcolor);
+                disp.setCursor(gx - BigNumber(30), gy - h - BigNumber(10));
+                disp.println(ylabel);
 
 
         }
@@ -730,12 +737,12 @@ void Graph(Adafruit_HX8357 & d, double x, double y, double gx, double gy, double
         //graph drawn now plot the data
         // the entire plotting code are these few lines...
         // recall that ox and oy are initialized as static above
-        BigNumber one = '1';
+        // BigNumber a = 1;
         x =  (x - xlo) * ( w) / (xhi - xlo) + gx;
         y =  (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-        d.drawLine(ox, oy, x, y, pcolor);
-        d.drawLine(ox, oy + one, x, y + one, pcolor);
-        d.drawLine(ox, oy - one, x, y - one, pcolor);
+        disp.drawLine(ox, oy, x, y, pcolor);
+        disp.drawLine(ox, oy + BigNumber(1), x, y + BigNumber(1), pcolor);
+        disp.drawLine(ox, oy - BigNumber(1), x, y - BigNumber(1), pcolor);
         ox = x;
         oy = y;
 
