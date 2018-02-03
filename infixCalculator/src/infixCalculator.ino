@@ -6,87 +6,18 @@
 #include <avr/sleep.h>
 #include <avr/power.h>
 
-#include <SPI.h>
-#include <SD.h>
-#include "Adafruit_HX8357.h"
+#include <StandardCplusplus.h>
+#include <boost_1_51_0.h>
 
-#define TFT_CS 53
-#define TFT_DC 48
-#define TFT_RST 8 // RST can be set to -1 if you tie it to Arduino's reset
-#define SD_CCS 5
-
-
-#define LTBLUE    0xB6DF
-#define LTTEAL    0xBF5F
-#define LTGREEN   0xBFF7
-#define LTCYAN    0xC7FF
-#define LTRED     0xFD34
-#define LTMAGENTA 0xFD5F
-#define LTYELLOW  0xFFF8
-#define LTORANGE  0xFE73
-#define LTPINK    0xFDDF
-#define LTPURPLE  0xCCFF
-#define LTGREY    0xE71C
-
-#define BLUE      0x001F
-#define TEAL      0x0438
-#define GREEN     0x07E0
-#define CYAN      0x07FF
-#define RED       0xF800
-#define MAGENTA   0xF81F
-#define YELLOW    0xFFE0
-#define ORANGE    0xFC00
-#define PINK      0xF81F
-#define PURPLE    0x8010
-#define GREY      0xC618
-#define WHITE     0xFFFF
-#define BLACK     0x0000
-
-#define DKBLUE    0x000D
-#define DKTEAL    0x020C
-#define DKGREEN   0x03E0
-#define DKCYAN    0x03EF
-#define DKRED     0x6000
-#define DKMAGENTA 0x8008
-#define DKYELLOW  0x8400
-#define DKORANGE  0x8200
-#define DKPINK    0x9009
-#define DKPURPLE  0x4010
-#define DKGREY    0x4A49
-
-// these are the only external variable used by the graph
-// it's a flat to draw the coordinate system only on the first pass
-boolean display1 = true;
-boolean display2 = true;
-boolean display3 = true;
-boolean display4 = true;
-boolean display5 = true;
-boolean display6 = true;
-boolean display7 = true;
-boolean display8 = true;
-boolean display9 = true;
-
-BigNumber ox, oy;
-BigNumber InputX = NULL;
-BigNumber InputY = NULL;
-
-
-/* a 1
-   b 10
-   c 20
-   d 30
-   e 40 */
-
+BigNumber InputX;
+BigNumber InputY;
 
 char infxstr[120];          // infix string buffer from serial input
 byte x = 0;                 // infix string X location
 
-Adafruit_HX8357 tft = Adafruit_HX8357(TFT_CS, TFT_DC);       // attach display to object declaration
-
 /*
    Input Infix Expression and Terminal Output Results
    ((3*5325)/3412*16)-12+(1555/12-29421)
-
    3
    5325
    7
@@ -122,9 +53,7 @@ Adafruit_HX8357 tft = Adafruit_HX8357(TFT_CS, TFT_DC);       // attach display t
  */
 
 /* Max Calculation Limit for an Arduino Mega 2560 is near 2^3500
-
    Finished Processing, we got result approximate for (2^3500):
-
    40270296195362184428695060755536962442278486893555705688113133546130765870172
    73715514067215023079321232763583950088951256520435312094180996588953238049534
    21455502359439932416245276659698167468088937570774479761417692998541764456595
@@ -139,14 +68,10 @@ Adafruit_HX8357 tft = Adafruit_HX8357(TFT_CS, TFT_DC);       // attach display t
    47246867522065584726369942916093728137773105488374703562705889962546268226061
    54512802132318476069531869703761221257941338277361836197198332730168523252328
    32105702331094682317528819996876363073536047370469376
-
    1054 - Total Characters in this number.
-
    Sketch uses 15676 bytes (6%) of program storage space. Maximum is 253952 bytes.
    Global variables use 825 bytes (10%) of dynamic memory, leaving 7367 bytes for local variables. Maximum is 8192 bytes.
-
    Any difference in specs will give you more or less numberspace to deal with.
-
    Changing the size of the char and byte arrays below will exponentially affect this upepr calculation limit.
    You have been warned.
  */
@@ -158,27 +83,18 @@ ISR( WDT_vect ) {
 void setup() {
         wdt_disable();
         watchdogSetup();
-
         BigNumber::begin();
         BigNumber::setScale(30);
-
         infxstr[0] = '(';
         x = 1;
-
         Serial.begin(115200);
         Serial1.begin(19200);  //Serial 1 RX pin on this MEGA should recieve information from the Attiny84 Keypad
         Serial2.begin(19200);  //Serial 2 TX pin on this MEGA should be wired to RX pin of Atmega328p
         byte Evalue = EEPROM.read(2);
-
         if (Evalue == 99) {
                 Serial.println("OVERFLOW, RECOVERED FROM FATAL CRASH. BE CAREFUL NEXT TIME :)"); // Serial0 tells the connected computer what happened
                 throwError(1); //error handler
         }
-
-        tft.begin(HX8357D);
-        tft.fillScreen(BLACK);
-        tft.setRotation(1);
-        //  graph_Setup(x, y, 0.01, -1, 15, 1, -10, 15, 2, "tan(abs((X-6)*(X-9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
 }
 
 //the whole code is nested under infixdataPull();
@@ -220,34 +136,14 @@ void infixdataPull() {
                 } else if (input == '=' || input == '=') {
                         infxstr[strlen(infxstr)] = ')';                         // caps the recieved infix string with a ')'
                         process_infix_begin_calculation(infxstr, input);
-                } else if (input == 'g' || input == 'g') {
-                        infxstr[strlen(infxstr)] = ')';
-                        BigNumber xMIN = -30;
-                        BigNumber xMAX = 30;
-                        BigNumber yMIN = -30;
-                        BigNumber yMAX = 30;
-                        BigNumber plotfreq = 1;
-                        for (InputX = xMIN; InputX <= xMAX; InputX += plotfreq) {
-                                process_infix_begin_calculation(infxstr, input);
-                                // Graph(tft, InputX, InputY, 45, 290, 420, 260, xMIN, xMAX, 5, yMIN, yMAX, 5, infxstr, "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK, display1);
-                        }
                 } else if (input == 'c' || input == 'C') {
-                        memset(infxstr, 0, strlen(infxstr));                       // sets all the bytes of memory that this string takes up to 0 in the respective address
+                        memset(infxstr, 0, strlen(infxstr));                    // sets all the bytes of memory that this string takes up to 0 in the respective address
                         infxstr[0] = '(';
                         x = 1;
-                        ox = 0;
-                        oy = 0;
                         InputX = 0;
-                        InputY = 0;                                               // these 3 lines do the same thing that void Setup() would do during initialization
+                        InputY = 0;                                             // these 3 lines do the same thing that void Setup() would do during initialization
                         Serial.println("Cleared String");
-                        tft.fillScreen(BLACK);
-                        tft.setRotation(1);
-                        display1 = true;
                 }
-                /*else if (input == 'd' || input == 'D') {
-                        infxstr[x] = '\0';
-                        if(x<0) {x-=1;}
-                   }*/
         }
 }
 //This is where the magic begins... and ends.
@@ -258,7 +154,7 @@ void process_infix_begin_calculation(char* istr, char byteChar) {
                 byte raw_index = 0;                 // number delimiter based by quantity of integers between each operator. (goes up by 1 every # scanned by proc and set as cutting length to tokenize numbers from the RAWstack)
                 byte infix_index = 0;               // infix reference stack X location
                 byte postfix_index = 0;             // postfix reference X location
-                //byte variable_index = 0;
+
                 byte delete_ones = 0;               // initialize the offset to 0. everytime we perform an operation where 2 operands join into 1, we increment this number up once and later use as a negative offset to make sure we have a proper location of math done.
 
                 char infixrawnumbersonly[150];      // string of only the numbers together in a linear fashion. (makes it easy for cutting and sorting into the number stack)
@@ -266,8 +162,6 @@ void process_infix_begin_calculation(char* istr, char byteChar) {
                 byte postfix_stack_reference[150];  // reference key showing POSTFIX notation of the expression in a simplified view
                 byte postfix_opstack[40];           // a stack used for rearranging operators to get them in PEMDAS order.
                 BigNumber numberStack[20];          // where operands are stored by index nmbrstack_FINAL[16] = "2932.231153" for example.
-                //BigNumber backupStack[20];
-                //byte variable_reference[20];      // tells us which spots in the numberStack have variable X's
 
                 /* Adjust the sizes of these stacks accordingly to your device.
                    All these calculations are done quickly and well. However, be mindful about the # of operators
@@ -423,9 +317,9 @@ void process_infix_begin_calculation(char* istr, char byteChar) {
                         }
                 }//end of for loop
                  //============================================================================================================================================================================================================
-                 /*for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(byte)); i++) {
-                         Serial.print(String(infix_stack_reference[i]));
-                    } Serial.println("");*/
+                 // for (int i = 0; i < (sizeof(infix_stack_reference) / sizeof(byte)); i++) {
+                 // Serial.print(String(infix_stack_reference[i]));
+                 // } Serial.println("");
 
                 const int sizeofPostfixRef = ((sizeof(postfix_stack_reference) - 1) / sizeof(byte));
                 const int sizeofOpstack = ((sizeof(postfix_opstack) - 1) / sizeof(byte));
@@ -438,12 +332,9 @@ void process_infix_begin_calculation(char* istr, char byteChar) {
                 } else {
                         calculate_postfix(infix_stack_reference, postfix_stack_reference, postfix_opstack, postfix_index, sizeofPostfixRef, sizeofOpstack, sizeofNumstack);
                         for (int h = 0; h < sizeofNumstack; h++) {
-                                numberStack[h] = numberStack[h];
-                        } Serial.println("proc'ed");
+                                Serial.print(numberStack[h]);
+                        } Serial.println("");
                         evaluate_postfix(postfix_stack_reference, numberStack, delete_ones, sizeofPostfixRef, sizeofNumstack);
-                }
-                if( byteChar != '=') {
-                        InputY = numberStack[0];
                 }
                 memset(postfix_opstack, 0, sizeof(postfix_opstack));
                 memset(infixrawnumbersonly, 0, strlen(infixrawnumbersonly));
@@ -514,10 +405,7 @@ void save_to_reference_stack(byte stack[], byte& index, byte value) {
 }
 
 void save_num(byte infix_stack[], byte& infix_index, char infixRAW[], byte& start, byte& cut_location, BigNumber numberStack[], byte& final_index) {
-
         save_to_reference_stack(infix_stack, infix_index, 1);                   // since we are saving a number, we should add a 1 to the reference stack, indicating a #.
-        // infix_stack[infix_index] = 1;
-        // infix_index++;
 
         char buff[200];
         String Z = String(infixRAW);
@@ -526,14 +414,15 @@ void save_num(byte infix_stack[], byte& infix_index, char infixRAW[], byte& star
         Serial.println(buff);
         BigNumber i = BigNumber(buff);
 
-        numberStack[final_index] = i;
+        numberStack[final_index] = i;                                           // I would have used save_to_reference_stack() but then consider the number of nested arguments that have to be included into save_num()
         final_index++;
-
 }
+
 // ATTENTION: EVERYLINE BELOW THIS ONE
 //  WAS ROLL BACK TO VERY EARLY COMMIT,
 //  SOMETHING WITH THE PLATFORMIO COMPILER
 //  THAT DESTROYS CERTAIN BEHAVIORS WITH THESE LOOPS.
+
 void calculate_postfix(byte i_ref_stack[], byte post[], byte opstack[], byte& pfx, const int& a, const int& b, const int& c) {
         byte ifx = 0;
         for ( byte k = 1; k != 0; k = i_ref_stack[ifx] ) {
@@ -559,17 +448,10 @@ void calculate_postfix(byte i_ref_stack[], byte post[], byte opstack[], byte& pf
 }
 
 void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack[], byte& pfx, const int& a, const int& b, const int& c) {
-        //Serial.println("pushtostack() DEBUG: precedence: " + String(precedence) + " operator value: " + String(opr8tr));
         for ( int p = b; p >= 0; p--) {
-                if ( p == 0 && postfix_opstack[p] == 0 ) { //this would set the first operator into the stack considering its all 0's first and we have to make sure its the bottom one.
+                if ( p == 0 && postfix_opstack[p] == 0 ) {
                         postfix_opstack[p] = opr8tr;
-                        //      //Serial.println("location is  " + String(p) + " operator value: " + String(postfix_opstack[p]));
                 } else if ((precedence != 255) && (opr8tr < postfix_opstack[p] && postfix_opstack[p] != 6) || ( (precedence == 2 && (postfix_opstack[p] == 2 || postfix_opstack[p] == 3)) || (precedence == 3 && (postfix_opstack[p] == 4 || postfix_opstack[p] == 5))  )    )  {
-                        /* CODE EXPLANATION -
-                           So first, we initialize a local temp variable to store the value of the fualty operator
-                           then we copy that temp variable to the postfix reference stack (ie. "popping" the stack)
-                           Finally, the variable in that spot "postfix_opstack[p]" is replaced with the new opr8ter given to us by the "input". (pushtostack(precedence, input oper8ter))
-                           precedence is needed to generalize our input oper8tr and compare it to the actual operators already present in the opstack */
                         int selected_oper8tr_in_opstack = postfix_opstack[p];
                         save_to_reference_stack(post, pfx, selected_oper8tr_in_opstack);
                         postfix_opstack[p] = opr8tr;
@@ -585,11 +467,9 @@ void pushtostack(byte precedence, byte opr8tr, byte post[], byte postfix_opstack
                         break;
                 } else if (precedence == 255 && opr8tr == 7) {
                         if (postfix_opstack[p] != 0) {
-                                //Serial.println("Checking the operator in the postfix_opstack[" + String(p) + "]   " + "we have : " + String(postfix_opstack[p]));
                                 int operator_2b_popped = postfix_opstack[p];
                                 postfix_opstack[p] = 0;
                                 if (operator_2b_popped != 6) {
-                                        //Serial.println("=======POPPED OPERATOR========= : " + String(operator_2b_popped));
                                         save_to_reference_stack(post, pfx, operator_2b_popped);
                                 } else break;
                         }
@@ -605,7 +485,6 @@ void evaluate_postfix(byte post[], BigNumber num_Stack[], byte& offset,  const i
                         perform_operation(value, p, post, num_Stack, offset, c);
                 }
         }
-        // Serial.print("Finished Processing, we got result approximate : ");
         Serial.println(num_Stack[0]);
 }
 
@@ -646,104 +525,3 @@ void bring_stack_down(byte& pop_at_this_x, BigNumber num_Stack[], byte& offset, 
         offset++;
 }
 //===================================================================================================================================================================================
-/*void graph_Setup(double inputX, double inputY, double Plotfreq, double Xmin, double Xmax, double Xinc, double Ymin, double Ymax, double Yinc, String TheTitle, String Xlabels, String Ylabels, unsigned int gridCol, unsigned int axiCol, unsigned int funcCol, unsigned int txtcolor, unsigned int bcolor ) {
-        int Xcorner = 45;
-        int Ycorner = 290;
-        for (inputX = Xmin; inputX <= Xmax; inputX += Plotfreq) {
-                //    inputY = inputX * inputX + 6 * inputX - 9;
-                inputY = tan(abs((inputX - 6) * (inputX - 9)));
-                Graph(tft, inputX, inputY, Xcorner, Ycorner, 420, 260, Xmin, Xmax, Xinc, Ymin, Ymax, Yinc, TheTitle, Xlabels, Ylabels, gridCol, axiCol, funcCol, txtcolor, bcolor, display1);
-        }
-   }*/
-
-void Graph(Adafruit_HX8357 & disp, BigNumber x, BigNumber y, BigNumber gx, BigNumber gy, BigNumber w, BigNumber h, BigNumber xlo, BigNumber xhi, BigNumber xinc, BigNumber ylo, BigNumber yhi, BigNumber yinc, String title, String xlabel, String ylabel, unsigned int gcolor, unsigned int acolor, unsigned int pcolor, unsigned int tcolor, unsigned int bcolor, boolean & redraw) {
-        /* a 1
-           b 10
-           c 20
-           d 30
-           e 40 */
-        BigNumber ydiv, xdiv;
-        // initialize old x and old y in order to draw the first point of the graph
-        // but save the transformed value
-        // note my transform funcition is the same as the map function, except the map uses long and we need doubles
-        //static double ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
-        //static double oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-        BigNumber i;
-        BigNumber temp;
-        BigNumber rot, newrot;
-
-        if (redraw == true) {
-
-                redraw = false;
-                ox = (x - xlo) * ( w) / (xhi - xlo) + gx;
-                oy = (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-                // draw y scale
-                for ( i = ylo; i <= yhi; i += yinc) {
-                        // compute the transform
-                        temp =  (i - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-
-                        if (i == 0) {
-                                disp.drawLine(gx, temp, gx + w, temp, acolor);
-                        }
-                        else {
-                                disp.drawLine(gx, temp, gx + w, temp, gcolor);
-                        }
-
-                        disp.setTextSize(1);
-                        disp.setTextColor(tcolor, bcolor);
-                        disp.setCursor(gx - BigNumber(40), temp);
-                        // precision is default Arduino--this could really use some format control
-                        disp.println(int(i));
-                }
-                // draw x scale
-                for (i = xlo; i <= xhi; i += xinc) {
-
-                        // compute the transform
-
-                        temp =  (i - xlo) * ( w) / (xhi - xlo) + gx;
-                        if (i == 0) {
-                                disp.drawLine(temp, gy, temp, gy - h, acolor);
-                        }
-                        else {
-                                disp.drawLine(temp, gy, temp, gy - h, gcolor);
-                        }
-
-                        disp.setTextSize(1);
-                        disp.setTextColor(tcolor, bcolor);
-                        disp.setCursor(temp, gy + BigNumber(10));
-                        // precision is default Arduino--this could really use some format control
-                        disp.println(int(i));
-                }
-
-                //now draw the labels
-                disp.setTextSize(2);
-                disp.setTextColor(tcolor, bcolor);
-                disp.setCursor(gx, gy - h - BigNumber(30));
-                disp.println(title);
-
-                disp.setTextSize(1);
-                disp.setTextColor(acolor, bcolor);
-                disp.setCursor(gx, gy + BigNumber(20));
-                disp.println(xlabel);
-
-                disp.setTextSize(1);
-                disp.setTextColor(acolor, bcolor);
-                disp.setCursor(gx - BigNumber(30), gy - h - BigNumber(10));
-                disp.println(ylabel);
-
-
-        }
-
-        //graph drawn now plot the data
-        // the entire plotting code are these few lines...
-        // recall that ox and oy are initialized as static above
-        // BigNumber a = 1;
-        x =  (x - xlo) * ( w) / (xhi - xlo) + gx;
-        y =  (y - ylo) * (gy - h - gy) / (yhi - ylo) + gy;
-        disp.drawLine(ox, oy, x, y, pcolor);
-        disp.drawLine(ox, oy + BigNumber(1), x, y + BigNumber(1), pcolor);
-        disp.drawLine(ox, oy - BigNumber(1), x, y - BigNumber(1), pcolor);
-        ox = x;
-        oy = y;
-
-}
