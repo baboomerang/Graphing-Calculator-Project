@@ -1,6 +1,6 @@
 # Graphing-Calculator-Project
 This project is to serve as an alternative calculator to the infamous Texas Instruments Ti-84 Graphing Calculator. 
-It uses a single Atmega2560 to perform calculations and then drive the actual display. There is a multiplexed keypad along with 8 debounced buttons for input. An Attiny84 sends keypad input along with an Atmega328p to the Arduino Mega 2560. The Arduino Mega uses that information to perform operations and graph functions similar to how a Ti-84 would do it. (Not quite, but similar). There are also status LED's implemented for visual debug and aesthetic.
+It uses a single Atmega2560 to perform calculations and then drive the actual display. There is a multiplexed keypad along with 8 debounced buttons for input. The Arduino Mega uses that information to perform operations and graph functions similar to how a Ti-84 would do it. (Not quite, but similar). There are also status LED's implemented for visual debug and aesthetic.
 
 ### Project Author(s)
 
@@ -15,7 +15,8 @@ Building this calculator is a closer alternative in that it can be made tangible
 
 ### Installation
 1. Compile, and upload to an Arduino Atmega2560.
-2. 
+2. Plug TFT Display shield on the mega.
+
 ### Materials
 *3.5" IPS TFT LCD Display ILI9486/ILI9488 480x320 36 Pins for Arduino Mega2560 * x 1
 
