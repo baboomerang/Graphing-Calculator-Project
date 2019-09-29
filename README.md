@@ -1,29 +1,23 @@
 # Graphing-Calculator-Project
 This project is to serve as an alternative calculator to the infamous Texas Instruments Ti-84 Graphing Calculator. 
-It runs multiple Atmel AVR chips to process inputs, perform calculations and then drive the actual display. There is a multiplexed keypad along with 8 debounced buttons for serial input. An Attiny84 sends keypad input along with an Atmega328p to the Arduino Mega 2560. The Arduino Mega uses that information to perform operations and graph functions similar to how a Ti-84 would do it. (Not quite, but similar). There are also status LED's implemented for visual debug and aesthetic.
+It uses a single Atmega2560 to perform calculations and then drive the actual display. There is a multiplexed keypad along with 8 debounced buttons for input. An Attiny84 sends keypad input along with an Atmega328p to the Arduino Mega 2560. The Arduino Mega uses that information to perform operations and graph functions similar to how a Ti-84 would do it. (Not quite, but similar). There are also status LED's implemented for visual debug and aesthetic.
 
 ### Project Author(s)
 
 Ilan Rodriguez
 
 ### Motivation
-I needed a calculator earlier in my senior high school year, so I decided to build one from scratch. However, it took significantly longer than expected. Thus, by the time I finished, I didn't actually need it. It's still cool to have nonetheless. Plus, making a calculator at this level really exercises my programming and planning skills.
+I needed a calculator earlier in my senior high school year, so I decided to build one from scratch. However, it took significantly longer than expected. Thus, by the time I finished, I didn't actually need it. It's still cool to have nonetheless. Plus, making a calculator at this level exercised my programming and planning skills.
 
-  Originally, I built BCD Full-Adders in minecraft with redstone and mods. Once my computer couldn't run all demands of the game at that stage, I decided to build a computer through real-life hardware. However, I do not know enough Computer Engineering design to build a computer from pure logic chips. 
+  Originally, I built BCD Full-Adders in minecraft with redstone and mods. Once my computer couldn't run all demands of the game at that stage, so I decided to build a computer with real hardware. However, I do not know enough Computer Engineering design to build a computer from discrete logic. 
 
 Building this calculator is a closer alternative in that it can be made tangible sooner.
 
 ### Installation
-Prerequisite: Knowing how softwareSerial works and how to utilize the SPI pins on the ATTINY84-20PU, ATmega2560-16AU, and ATMEGA328P.
-It would take too long to explain the wiring for a USBTiny ISP. (Learn how to use an ISP on some barebones AVR Chips first)
-1. Download and install Software-Serial, Bounce2, TinyCore, MiniCore, BigNumber, LEDFader, and MemoryFree Libraries listed below.
-2. Get a Sparkfun TinyAVR Programmer or any other compatible AVR programmer.
-3. Install the [*attiny84_keypad.ino*](../master/attiny84_keypad/attiny84_keypad.ino) onto an Atmel Attiny 84.
-4. Then install the [*atmega328p_IO.ino*](../master/atmega328p_IO/atmega328p_IO.ino) onto an Atmel Atmega328p (Arduino UNO or barebones breadboard-able chip).
-5. Flash the [*infixCalculator.ino*](../master/infixCalculator/infixCalculator.ino) file as well as [*graphingControl.ino*](../master/infixCalculator/graphingControl.ino) to an arduino mega2560.
-
+1. Compile, and upload to an Arduino Atmega2560.
+2. 
 ### Materials
-*3.5" TFT 320x480 + Touchscreen Breakout Board w/MicroSD Socket - HXD8357D* x 1
+*3.5" IPS TFT LCD Display ILI9486/ILI9488 480x320 36 Pins for Arduino Mega2560 * x 1
 
 *ATMEL ATTINY84-20PU 8-BIT 20MHz MCU (2 PACK)* x 1
 
@@ -39,14 +33,12 @@ It would take too long to explain the wiring for a USBTiny ISP. (Learn how to us
 
 *SainSmart IIC/I2C/TWI Serial 2004 20x4 LCD Module Shield For Arduino UNO MEGA R3* x 1
 
-
 ## Additional Credits to Library Authors:
 
 ###### Kris Kasprzak for Graphing Library
 
-###### Thomas O. Fredericks for Bounce2 Library
-
-  https://github.com/thomasfredericks/Bounce2
+###### Bodmer for HX8357B, HX8357C, ILI9481 and ILI9486 Libraries
+  https://github.com/Bodmer/TFT_HX8357
 
 ###### Sudar Muthu for MemoryFree Library
 

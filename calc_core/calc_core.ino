@@ -287,14 +287,14 @@ byte calculate(QueueList <char> &inputQueue, byte intent) {
     if (intent) InputY = result;
     printBignum(result);                  // prints the result to serial monitor
     plot(tft, InputX, InputY, 45, 290, 420, 260, xMIN, xMAX, 5, yMIN, yMAX, 5, "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
-    //plot(disp,   x  ,  y    , gx,  gy,  w ,  h , xlo ,  xhi, xinc, ylo, yhi, yinc,        title, title, graph colors....)
+    //    plot(disp,   x  ,  y    , gx,  gy,  w ,  h , xlo ,  xhi, xinc, ylo, yhi, yinc,        title, title, graph colors....)
     //    plot(x, y, 0.01, -1, 15, 1, -10, 15, 2, "tan(abs((X-6)*(X-9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
     return 0;
   }
 }
 void saveNumber(StackList <BigNumber> &resultQueue, QueueList <char> &numberQueue) { //converts the char Queue into a single BigNumber
   //nickgammon provided a method of typecasting a character array into a BigNumber
-  //but when that method is used dynamically and numerous times, it would result in a '0' being saved
+  //but when that method is used dynamically and numerous times, it would result in an occasional '0' being saved
   //This is painfully slower than every other method known to man. Blame the arduino for which this
   //method is the only reliable one.
   if (numberQueue.isEmpty())return;
