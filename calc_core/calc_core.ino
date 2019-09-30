@@ -1,5 +1,4 @@
-
-
+#include <MemoryFree.h>
 /* @file Calculator
   || @version 3.0
   || @date 09/28/2019
@@ -23,12 +22,12 @@
 #include <EEPROM.h>
 #include <Wire.h>
 
-#include <LiquidCrystal_I2C.h>
-#define I2C_ADDR 0x27
-#define BACKLIGHT_PIN 3
-#define En_pin 2
-#define Rw_pin 1
-#define Rs_pin 0
+//#include <LiquidCrystal_I2C.h>
+//#define I2C_ADDR 0x27
+//#define BACKLIGHT_PIN 3
+//#define En_pin 2
+//#define Rw_pin 1
+//#define Rs_pin 0
 
 #include <TFT_HX8357.h>
 #include <User_Setup.h>
@@ -88,12 +87,6 @@
 
 #define ADJ_PIN A0
 
-TFT_HX8357 tft = TFT_HX8357(TFT_CS, TFT_DC);
-//#define D4_pin 4
-//#define D5_pin 5
-//#define D6_pin 6
-//#define D7_pin 7
-
 BigNumber InputX = NULL;
 BigNumber InputY = NULL;
 
@@ -101,19 +94,27 @@ BigNumber xMIN = -30;
 BigNumber xMAX = 30;
 BigNumber yMIN = -30;
 BigNumber yMAX = 30;
-BigNumber plotfreq = 1;
+BigNumber plotfreq = 5;
 BigNumber ox, oy;
 
+
+TFT_HX8357 tft = TFT_HX8357(TFT_CS, TFT_DC);
+//#define D4_pin 4
+//#define D5_pin 5
+//#define D6_pin 6
+//#define D7_pin 7
 //LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);
 QueueList <char> serialQueue;
 /* ======================================================================================
   Alright, so....
 
-   Insert test expression into your arduino serial monitor: ((3*5325)^7/3412*16)-12+(1555/12-29421)^2
+   Insert test expression into your arduino serial monitor: ((3*5325)^7/3412*16)-12+(1555/12-29421)^2=
 
    Result should be this (in postfix notation): 3 5325*7^3412/16*12-155512/29421-2^+
 
    Numerical Result : 1245079343380762145465942456.417651751986453041552689  or 1.245079 * 10^27
+   123^59
+
   ======================================================================================== */
 ISR( WDT_vect ) {
   EEPROM.write(2, 99);  //ISR gives very little time to do any action before a system reset, writing error code to eeprom (which is non-volatile)is useful.
@@ -133,28 +134,29 @@ void watchdogSetup(void) {
   // Enter Watchdog Configuration mode:
   WDTCSR |= (1 << WDCE) | (1 << WDE);
   // Set Watchdog settings:
-  WDTCSR = (1 << WDIE) | (1 << WDE) | (0 << WDP3) | (1 << WDP2) | (1 << WDP1) | (1 << WDP0);
+  WDTCSR = (1 << WDIE) | (1 << WDE) | (1 << WDP3) | (1 << WDP2) | (1 << WDP1) | (1 << WDP0);
   sei();
 }
 void errorCheck(byte returnvalue) {
-  if (returnvalue == 0) Serial.print(F("SUCCESS"));
-  if (returnvalue == 1) Serial.print(F("GENERAL SYNTAX ERROR"));
-  if (returnvalue == 2) Serial.print(F("SYNTAX ERROR: NOT ENOUGH OPERANDS"));
-  if (returnvalue == 3) Serial.print(F("SYNTAX ERROR: NOT ENOUGH OPERATORS"));
-//  if (returnvalue) {
-//    lcd.clear();
-//    lcd.print(F("SYNTAX ERROR"));
-//  }
+  if (returnvalue == 0) Serial.println(F("SUCCESS"));
+  if (returnvalue == 1) Serial.println(F("GENERAL SYNTAX ERROR"));
+  if (returnvalue == 2) Serial.println(F("SYNTAX ERROR: NOT ENOUGH OPERANDS"));
+  if (returnvalue == 3) Serial.println(F("SYNTAX ERROR: NOT ENOUGH OPERATORS"));
+  //  if (returnvalue) {
+  //    lcd.clear();
+  //    lcd.print(F("SYNTAX ERROR"));
+  //  }
 }
 void setup() {
   wdt_disable(); // disable watchdog immediately to prevent any bugs or bootloops
   watchdogSetup();// starts the timer, subsequent copies of this function are required to prevent undesired automatic device rebooting
-  BigNumber::begin(20);
+  BigNumber::begin(12);
   Serial.begin(57600);
-
+//  Serial.print("Free Memory = ");
+//  Serial.println(getFreeMemory());
   if (EEPROM.read(2) == 99) {
     Serial.println(F("MEM OVERFLOW: TOO LARGE NUMBER")); // Serial0 tells the connected computer what happened
-//    lcd.print(F("OVERFLOW # TOO LARGE")); // Same as above, but prints to lcd
+    //    lcd.print(F("OVERFLOW # TOO LARGE")); // Same as above, but prints to lcd
     EEPROM.write(2, 0);
   }
 
@@ -163,32 +165,37 @@ void setup() {
 
   Serial.print("INPUT:");
 
-//  lcd.begin(); //(20, 4, LCD_5x8DOTS);
-//  lcd.backlight();
-//  //lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE);
-//  //lcd.setBacklight(HIGH);
-//  //lcd.blink();
-//  lcd.home();
-//  lcd.cursor();
+  //  lcd.begin(); //(20, 4, LCD_5x8DOTS);
+  //  lcd.backlight();
+  //  //lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE);
+  //  //lcd.setBacklight(HIGH);
+  //  //lcd.blink();
+  //  lcd.home();
+  //  lcd.cursor();
 
-  tft.fillScreen(BLACK);
-  tft.setRotation(1);
+  //  tft.fillScreen(BLACK);
+  //  tft.setRotation(1);
   //  display1 = true;
 }
 void loop() {
   wdt_reset();
-  tft.fillScreen(BLACK);
-  tft.setRotation(1);
+  //  tft.fillScreen(BLACK);
+  //  tft.setRotation(1);
+//  Serial.print("Free Memory = ");
+//  Serial.println(getFreeMemory());
   if (Serial.available() > 0 || Serial1.available() > 0) {
     if (serialQueue.isEmpty())serialQueue.push('(');
     byte incomingbyte;
     if (Serial.available() > 0 ) incomingbyte = Serial.read(); //recieve byte from computer serial
     if (char(incomingbyte) == 'g') {
-      for (InputX = xMIN; InputX <= xMAX; InputX += plotfreq) errorCheck(calculate(serialQueue, 1));
+      for (InputX = xMIN; InputX <= xMAX; InputX += plotfreq) {
+        Serial.println("plotting");
+        errorCheck(calculate(serialQueue, 1));
+      }
     }
     if (char(incomingbyte) == '=') errorCheck(calculate(serialQueue, 0));
     if (char(incomingbyte) == 'c') printStack(serialQueue);
-    if ( ( isDigit(char(incomingbyte)) || isOperator(char(incomingbyte)) ) ) {
+    if ( ( isDigit(char(incomingbyte)) || isOperator(char(incomingbyte)) || char(incomingbyte) == 'x' ) ) {
       serialQueue.push(char(incomingbyte)); // anything that isn't a control character is pushed to the stack
       Serial.print(String(char(incomingbyte)));
     }
@@ -227,6 +234,8 @@ void printBignum (BigNumber & n) {
   free (s);
 }
 void doMath(StackList <BigNumber> &x, char operation) {
+//  Serial.print("Free Memory IN MATH= ");
+//  Serial.println(getFreeMemory());
   if (!x.isEmpty()) {
     BigNumber y = x.pop();
     if (!x.isEmpty()) {
@@ -234,7 +243,12 @@ void doMath(StackList <BigNumber> &x, char operation) {
       if (operation == '+') z += y;
       if (operation == '-') z -= y;
       if (operation == '*') z *= y;
-      if (operation == '/') z /= y;
+      if (operation == '/' && y.isZero()) {
+        Serial.println(F("DIVIDE BY ZERO"));
+        return;
+      } else if (operation == '/' && !y.isZero()) z /= y;
+//      Serial.print("Free Memory AFTER MATH = ");
+//      Serial.println(getFreeMemory());
       if (operation == '^') z = z.pow(y);
       x.push(z);
     } else Serial.println(F("SYNTAX ERROR: NOT ENOUGH OPERANDS"));
@@ -246,11 +260,18 @@ byte calculate(QueueList <char> &inputQueue, byte intent) {
   QueueList <char> numberQueue;
   StackList <BigNumber> resultQueue;
   bool wasNumber = false;
+  bool prevX = false;
   while (!inputQueue.isEmpty()) {//================================================================================ while inputqueue is not empty, loop everything between this and below ==============
     char character = inputQueue.pop();
     if (character == '(') {  // '(' has no precedence value, right parenth has only one expected behavior (below).
       opstack.push(character);
       if (wasNumber)saveNumber(resultQueue, numberQueue);
+    }
+    //-----------------------------------------------------------------------------------------
+    //else if (character == 'x' && (numberQueue.peek() == 'x' || numberQueue.peek() == '(')) {}
+    else if (character == 'x') {
+      if (wasNumber)saveNumber(resultQueue, numberQueue);
+      resultQueue.push(InputX);
     }
     //------------------------------------------------------------------------------
     else if (isDigit(character) || character == '.') {   // if number or . then push to array (the array will eventually be converted into a BigNum)
@@ -278,25 +299,27 @@ byte calculate(QueueList <char> &inputQueue, byte intent) {
     //------------------------------------------------------------------------------
   }// ============================================================================================================== while inputqueue is not empty, loop everything between this and above ==============
   BigNumber result = "0";
-  if (resultQueue.isEmpty()) return 2;    // if the result queue is empty, then there were more operators left in the
+  if (resultQueue.isEmpty()) return 2;    // if the result queue is empty, then there were more operators than operands. (so there were not enough operands for all operators to pop out of the opstack)
   else result = resultQueue.pop();
   if (!resultQueue.isEmpty()) return 3;   // if it's still not empty, then there is an extra operand that didnt recieve any operation, (NOT ENOUGH OPERATORS)
   else {
     Serial.println(F(""));
     Serial.print(F("RESULT: "));
-    if (intent) InputY = result;
-    printBignum(result);                  // prints the result to serial monitor
-    plot(tft, InputX, InputY, 45, 290, 420, 260, xMIN, xMAX, 5, yMIN, yMAX, 5, "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
-    //    plot(disp,   x  ,  y    , gx,  gy,  w ,  h , xlo ,  xhi, xinc, ylo, yhi, yinc,        title, title, graph colors....)
-    //    plot(x, y, 0.01, -1, 15, 1, -10, 15, 2, "tan(abs((X-6)*(X-9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
+    if (intent) {
+      InputY = result;
+      plot(tft, InputX, InputY, 45, 290, 420, 260, xMIN, xMAX, 5, yMIN, yMAX, 5, "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
+      //plot(disp,  x   ,  y  , gx,  gy,  w ,  h , xlo ,  xhi, xinc, ylo, yhi, yinc,xtitle, ytitle, graph colors....)
+      //plot(x, y, 0.01, -1, 15, 1, -10, 15, 2, "tan(abs((X-6)*(X-9)))", "X", "Y", DKBLUE, RED, LTMAGENTA, WHITE, BLACK);
+    } else printBignum(result);                  // prints the result to serial monitor
+
     return 0;
   }
 }
 void saveNumber(StackList <BigNumber> &resultQueue, QueueList <char> &numberQueue) { //converts the char Queue into a single BigNumber
-  //nickgammon provided a method of typecasting a character array into a BigNumber
-  //but when that method is used dynamically and numerous times, it would result in an occasional '0' being saved
-  //This is painfully slower than every other method known to man. Blame the arduino for which this
-  //method is the only reliable one.
+  /*nickgammon provided a method of typecasting a character array into a BigNumber
+    but when that method is used dynamically and rapidly, it would result in an occasional '0' being saved
+    This is painfully slower than every other method known to man. Blame the arduino for which this
+    method is the only reliable one.*/
   if (numberQueue.isEmpty())return;
   BigNumber i = "0";
   BigNumber baseTen = "10";
