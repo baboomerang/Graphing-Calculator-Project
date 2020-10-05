@@ -2,7 +2,7 @@
 #define STACK_H
 
 /* 
-This list.h code is provided "as-is" with no warranty, implied or not.
+This stack.h code is provided "as-is" with no warranty, implied or not.
 By using this code you agree to proceed at your own risk.
 */
 
