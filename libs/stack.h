@@ -6,6 +6,12 @@ This stack.h code is provided "as-is" with no warranty, implied or not.
 By using this code you agree to proceed at your own risk.
 */
 
+// This Stack object is a STATICALLY ALLOCATED array. It is a very simplified version with
+// a small code footprint with only the minimum required for the arduino.
+// It is designed specifically for standard types (byte, int, long, char) and can only push, pop and peek the back.
+
+// If you use Strings or user-defined objects, there WILL be memory leaks. You have been warned.
+
 template<typename T>
 class Stack {
 private:

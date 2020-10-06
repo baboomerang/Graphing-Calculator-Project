@@ -6,6 +6,10 @@ This list.h code is provided "as-is" with no warranty, implied or not.
 By using this code you agree to proceed at your own risk.
 */
 
+// This List Object is a dynamically allocated Linked-List. It is a very simplified version with
+// a small code footprint with only the minimum required for the arduino.
+// It is designed to behave exactly like a stack and can only push, pop and peek the back.
+
 template<typename T>
 class List {
 private:
@@ -22,8 +26,8 @@ public:
     void push(const T item);
     T pop();
     T& peek();
-    int count();
-    bool isEmpty();
+    int count() const;
+    bool isEmpty() const;
 };
 
 template<typename T>
@@ -97,12 +101,12 @@ T& List<T>::peek() {
 }
 
 template<typename T>
-int List<T>::count() {
+int List<T>::count() const {
     return length;
 }
 
 template<typename T>
-bool List<T>::isEmpty() {
+bool List<T>::isEmpty() const {
     return length < 1;
 }
 
