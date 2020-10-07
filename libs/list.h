@@ -99,12 +99,10 @@ template<typename T>
 T& List<T>::peek() {
     return tail->data;
 }
-
 template<typename T>
 int List<T>::count() const {
     return length;
 }
-
 template<typename T>
 bool List<T>::isEmpty() const {
     return length < 1;

@@ -24,7 +24,7 @@ public:
     void push(const T item);
     T pop();
     T& peek();
-    int size() const;
+    int count() const;
     bool isEmpty() const;
     bool isFull() const;
 };
@@ -50,6 +50,9 @@ Stack<T>::~Stack() {
 
 template<typename T>
 T& Stack<T>::peek() {
+    if (top <= 0)
+        return array[0];
+
     return array[top - 1];
 }
 
@@ -74,7 +77,7 @@ T Stack<T>::pop() {
 }
 
 template<typename T>
-int Stack<T>::size() const {
+int Stack<T>::count() const {
     return top;
 }
 template<typename T>
