@@ -1,48 +1,58 @@
 void calculate(char (&input)[INPUT_SIZE]) {
   String num;
-  num.reserve(INPUT_SIZE);
-  Stack<char> opstack(INPUT_SIZE / 2);  //binary operators require 2 operands
+  num.reserve(INPUT_SIZE); //prevents heap fragmentation
+  Stack<char> opstack(INPUT_SIZE / 2); //binary operators need two operands
   List<BigNumber> operands;
 
   for (int x = 0; x <= index; x++) {
     char token = input[x];
-    if (isDigit(token) || token == '.') {
-      num.concat(token);
-    } else {
-      if (num)
-        transfer(num, operands);
+    switch (token) {
+      case '0'...'9':
+      case '.':
+        num.concat(token);
+        break;
+      case '+':
+      case '-':
+      case '*':
+      case '/':
+      case '^':
+        if (num)
+          transfer(num, operands);
 
-      if (isOperator(token)) {
         while (precedence(token) <= precedence(opstack.peek())) {
           if (associativity(token))
-            break;  //warning: clever use of break; only when '^' is pushed to another '^'
-          doMath(opstack.pop(), operands); //must do math with higher precedence operators first
+            break;
+          doMath(opstack.pop(), operands);
         }
+      case '(':
         opstack.push(token);
-      }
-
-      if (token == '(')
-        opstack.push(token);
-
-      if (token == ')') {
-        while (doMath(opstack.peek(), operands) == 0)
-          opstack.pop();
-      }
-
+        break;
+      case ')':
+        while (opstack.peek() && opstack.peek() != '(') {
+          doMath(opstack.pop(), operands);
+        }
+        opstack.pop(); //discard closing parenth
+        break;
     }
   }
 
-  //above logic only runs while theres characters to read.
-  //we must do one final check at the end of the input stream to get proper output
+  // process entire opstack at the end of input stream
+  while (opstack.peek() && opstack.peek() != '(') {
+    doMath(opstack.pop(), operands);
+  }
 
-  while (doMath(opstack.peek(), operands) == 0) {
-    opstack.pop();  //if do math was a success, remove it from the stack.
+  //END OF ALGORITHM, CHECK STATUS OF RESULTS HERE
+
+  if (opstack.peek() == '(') {
+    raise(4);   //extra closing parenth, parenth mismatch
+    return;
   }
 
   if (!opstack.isEmpty()) {
     raise(2);  //opstack should have been empty if syntax was respected
     return;
   }
+
   if (operands.count() != 1) {
     raise(3);  //if parenthesis were abused, there werent enough operators
     return;
@@ -55,15 +65,14 @@ void calculate(char (&input)[INPUT_SIZE]) {
 void transfer(String &num, List<BigNumber> &output) {
   char array[num.length() + 1];
   num.toCharArray(array, num.length() + 1);
-
   output.push(BigNumber(array));
   num.remove(0);
 }
 
-inline uint8_t doMath(char op, List<BigNumber> &output) {
-  if (output.count() < 2) {
-    return 1;  //if there arent enough operands, return error
-  }
+inline byte doMath(char op, List<BigNumber> &output) {
+  if (output.count() < 2)
+    return 0;  //if there arent enough operands, return error
+
   BigNumber y = output.pop();
   BigNumber z = output.pop();
   switch (op) {
@@ -80,16 +89,19 @@ inline uint8_t doMath(char op, List<BigNumber> &output) {
       z /= y;
       break;
     case ('^'):
-      z.pow(y);
+      z = z.pow(y);
       break;
-    default:
-      return 1;  //catch all if parenths get caught in the case
+    default: //defense against a dumb anti-pattern I accidentally made
+      output.push(z);
+      output.push(y);
+      return 0; //if invalid op, put operands back in their place
   }
+
   output.push(z);
-  return 0;
+  return 1;
 }
-bool isOperator(char &value) {
-  switch (value) {
+bool isOperator(char &op) {
+  switch (op) {
     case '+':
     case '-':
     case '*':
@@ -114,7 +126,7 @@ byte precedence(char &op) {
       return 0;
   }
 }
-byte associativity(char &op) {
+bool associativity(char &op) {
   if (op == '^') return 1;
   return 0;
 }
