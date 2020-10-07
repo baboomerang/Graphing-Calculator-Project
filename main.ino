@@ -1,4 +1,4 @@
-//#include <MemoryFree.h>
+#include <MemoryFree.h>
 #include <BigNumber.h>
 #include <EEPROM.h>
 
@@ -16,20 +16,21 @@ void raise(byte value) {
   if (value == 1) Serial.println(F("GENERAL SYNTAX ERROR"));
   if (value == 2) Serial.println(F("SYNTAX ERROR: NOT ENOUGH OPERANDS"));
   if (value == 3) Serial.println(F("SYNTAX ERROR: NOT ENOUGH OPERATORS"));
-  if (value == 4) Serial.println(F("MEM OVERFLOWED: TOO LARGE NUMBER"));
-  if (value == 5) Serial.println(F("INPUT: MAXIMUM SIZE REACHED"));
+  if (value == 4) Serial.println(F("SYNTAX ERROR: PARENTH MISMATCH"));
+  if (value == 5) Serial.println(F("MEM OVERFLOWED: TOO LARGE NUMBER"));
+  if (value == 6) Serial.println(F("INPUT: MAXIMUM SIZE REACHED"));
 }
 
 void setup() {
   wdt_disable();  //disable all interrupts and wdt; prevents reset loop
   wdt_setup();    //sets up watchdog and re-enables all interrupts
-  
+
   BigNumber::begin(12);
   Serial.begin(19200);
 
   if (EEPROM.read(2) == 99) {
     EEPROM.write(2, 0); //clear memory error flag
-    raise(4);   //notify user of memory error from last boot (when the ISR kicked in)
+    raise(5);   //notify user of memory error from last boot (when the ISR kicked in)
   }
 
   memset(input, 0, INPUT_SIZE);
@@ -46,11 +47,10 @@ void loop() {
       case '(' ... '+': //from char 40 to 43; we skip the commma ',' (44)
       case '-' ... '9': //from char 45 to 57
       case '^':
-        if (index > INPUT_SIZE) {
-          raise(5);   //notify user the input is at max length
-          break;
-        }
-        input[index++] = token;
+        if (index > INPUT_SIZE)
+          raise(6);
+        else
+          input[index++] = token;
         break;
       case 'c':
         memset(input, 0, INPUT_SIZE);
