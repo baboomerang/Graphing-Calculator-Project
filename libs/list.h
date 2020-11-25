@@ -2,30 +2,30 @@
 #define LIST_H
 
 /* 
-This list.h code is provided "as-is" with no warranty, implied or not.
-By using this code you agree to proceed at your own risk.
-*/
-
-// This List Object is a dynamically allocated Linked-List. It is a very simplified version with
-// a small code footprint with only the minimum required for the arduino.
-// It is designed to behave exactly like a stack and can only push, pop and peek the back.
+ * This list.h code is provided "as-is" with no warranty, implied or not.
+ * By using this code you agree to proceed at your own risk.
+ *
+ * This List Object is a dynamically allocated Linked-List. It is a very simplified version with
+ * a small memory footprint with only the minimum required for the arduino.
+ * 	-updated nov 13, 2020
+ */
 
 template<typename T>
 class List {
 private:
     int length;
     struct Node {
-        T data;
-        Node *next;
+        T* data;
+        Node* next;
     };
-    Node *head;
-    Node *tail;
+    Node* head;
+    Node* tail;
 public:
     List();
     ~List();
-    void push(const T item);
-    T pop();
-    T& peek();
+    void push(T* item);
+    T* pop();
+    T* peek();
     int count() const;
     bool isEmpty() const;
 };
@@ -39,70 +39,75 @@ List<T>::List() {
 
 template<typename T>
 List<T>::~List() {
-    Node *iterator;
-    while (head != NULL) {
-        iterator = head;
+    for (Node* iterator = head; head != NULL; iterator = head) {
         head = head->next;
-        delete(iterator);
+        delete(iterator->data);  //call destructor on data
+        delete(iterator);        //destruct the struct and pointers
     }
-    head = NULL;
     tail = NULL;
     length = 0;
 }
 
-
+/* Create a new node with data and link it to the list */
 template<typename T>
-void List<T>::push(const T item) {
-    Node *tmp = new Node;  //node constructor
-    tmp->data = item;
-    tmp->next = NULL;
-
-    if (head == NULL) {    //if empty list, initialize the head
-        head = tmp;
-        tail = tmp;
-    } else {               //else make the current tail point to new tail (tmp)
-        tail->next = tmp;
-        tail = tmp;
+void List<T>::push(T* item) {
+    if (head == NULL) {
+        head = new Node{item, NULL};
+        tail = head;
+    } else {
+        tail->next = new Node{item, NULL};
+        tail = tail->next;
     }
-    ++length;
+    length++;
 }
 
+/* Copy data from tail node and free the tail node */
 template<typename T>
-T List<T>::pop() {
-    if (length < 1) {     //pop NULL if List is empty
-        return NULL;
+T* List<T>::pop() {
+    if (head == NULL)
+        return T();
+
+    //iterate and find the second last node
+    Node* iterator = head;
+    while (iterator->next != NULL) {
+        if (iterator->next->next == NULL)
+            break;
+        iterator = iterator->next;
     }
 
-    if (length == 1) {    //pop the head if only head
-        --length;
-        T result = head->data;
-        delete(head);
-        head = NULL;
-        tail = NULL;
-        return result;
-    }
-    
-                    //else iterate and find the item right before the last
-    Node *it = head;
-    while (it->next->next != NULL) {
-        it = it->next;
+    //copy data pointer from tail and pop the tail node
+    T* result;
+    if (length == 1) {  //if node is just the head
+        result = iterator->data;
+        delete(iterator);
+    } else {
+        result = iterator->next->data;
+        delete(iterator->next);
     }
 
-    --length;
-    T result = it->next->data;
-    delete(it->next);
-    it->next = NULL;
+    //make second last node the new tail
+    tail = iterator;
+    tail->next = NULL;
+    length--;
     return result;
 }
 
+/* Return a copy of the data ptr from tail node ONLY */
 template<typename T>
-T& List<T>::peek() {
+T* List<T>::peek() {
+    if (isEmpty())
+        return T();  //silent defense against NULL pointer
+
     return tail->data;
 }
+
+/* Find how many elements are in the list */
 template<typename T>
 int List<T>::count() const {
     return length;
 }
+
+/* Check if the list is empty */
 template<typename T>
 bool List<T>::isEmpty() const {
     return length < 1;
